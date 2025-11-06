@@ -50,7 +50,7 @@ const logoStyle = computed((): CSSProperties => {
   };
 });
 
-const defaultValue = '123';
+const defaultValue = '1232';
 
 const emitFn = (e: Event) => {
   emit('change', '12');
