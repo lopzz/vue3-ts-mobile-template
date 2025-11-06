@@ -27,6 +27,8 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.39.1",
     "@stylistic/stylelint-plugin": "^4.0.0",
     "@tsconfig/node22": "^22.0.2",
@@ -39,6 +41,7 @@
     "@vitejs/plugin-vue-jsx": "^5.1.1",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.21",
+    "commitlint-plugin-function-rules": "^4.1.0",
     "cssnano": "^7.1.2",
     "eslint": "^9.37.0",
     "eslint-plugin-import-x": "^4.16.1",
