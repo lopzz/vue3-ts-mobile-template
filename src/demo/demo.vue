@@ -53,7 +53,7 @@ const logoStyle = computed((): CSSProperties => {
 const defaultValue = '12232';
 
 const emitFn = (e: Event) => {
-  emit('change', '122');
+  emit('change', '1224');
 };
 defineExpose({
   emitFn,
