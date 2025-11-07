@@ -146,3 +146,16 @@ const userConfig = {
 };
 
 export default userConfig;
+
+// 例子：
+// feat: add some feature
+// fix: correct a bug
+// docs: update documentation
+// style: format code
+// refactor: refactor code
+// perf: improve performance
+// test: add or update tests
+// build: change build process
+// ci: update CI configuration
+// chore: other changes that don't modify src or test files
+// revert: revert a previous commit
