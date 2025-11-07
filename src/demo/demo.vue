@@ -50,10 +50,12 @@ const logoStyle = computed((): CSSProperties => {
   };
 });
 
-const defaultValue = '12232';
+const defaultValue = '122322';
+console.warn('defaultValue', defaultValue);
 
 const emitFn = (e: Event) => {
   emit('change', '12241');
+  console.warn('e', e);
 };
 defineExpose({
   emitFn,
