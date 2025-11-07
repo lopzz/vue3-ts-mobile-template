@@ -11,7 +11,7 @@
     "stylelint.config.*",
     ".commitlintrc.*",
     "postcss.config.*",
-    "internal/lint-configs/**/*"
+    "internal/**/**/*"
   ],
   "compilerOptions": {
     "noEmit": true,
