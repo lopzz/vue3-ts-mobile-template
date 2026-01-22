@@ -17,6 +17,7 @@
     "reinstall": "pnpm clean --del-lock && pnpm install"
   },
   "dependencies": {
+    "@popperjs/core": "^2.11.8",
     "axios": "^1.13.1",
     "dayjs": "^1.11.19",
     "defu": "^6.1.4",

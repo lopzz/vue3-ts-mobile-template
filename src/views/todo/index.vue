@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Content from './components/Content.vue';
 
-defineOptions({ name: 'Home' });
+defineOptions({ name: 'Todo' });
 </script>
 
 <template>

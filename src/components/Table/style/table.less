@@ -1,0 +1,123 @@
+.table {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-row {
+  display: flex;
+}
+
+.table-cell {
+  flex: 1;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #2b313f;
+  overflow-wrap: break-word;
+}
+
+.header-cell {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 400;
+  color: #5a6275;
+}
+
+.table-header {
+  overflow-x: auto;
+  background-color: #f9fafb;
+}
+
+.table-content {
+  display: flex;
+}
+
+.scroll-table {
+  height: 247px;
+
+  .table-content-scroll-container {
+    flex: 1;
+    height: 0;
+    overflow: auto;
+  }
+}
+
+.table-content-container {
+  position: relative;
+}
+
+// 列固定
+.pinned-left-header-container {
+  display: flex;
+}
+
+.pinned-right-header-container {
+  display: flex;
+}
+
+.cell-last-left-pinned {
+  border-right: 1px solid #e8e8e8;
+}
+
+.cell-first-right-pinned {
+  border-left: 1px solid #e8e8e8;
+}
+
+.header-container {
+  display: flex;
+  flex: 1;
+  width: 0;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+.cols-container {
+  flex: 1;
+  width: 0;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+// 排序图标
+.sort-container {
+  display: flex;
+  align-items: center;
+}
+
+.sort-icon-none,
+.sort-icon-desc,
+.sort-icon-asc {
+  display: flex;
+  align-items: center;
+}
+
+.sort-icon-none::before {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  content: '';
+  background-image: url('../assets/sort/default-sort-none.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+.sort-icon-desc::before,
+.sort-icon-asc::before {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  content: '';
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+.sort-icon-asc::before {
+  background-image: url('../assets/sort/default-sort-asc.svg');
+}
+
+.sort-icon-desc::before {
+  background-image: url('../assets/sort/default-sort-desc.svg');
+}

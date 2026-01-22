@@ -46,6 +46,7 @@ export async function ignores(): Promise<Linter.Config[]> {
         '**/*.sh',
         '**/*.ttf',
         '**/*.woff',
+        '**/components.d.ts',
       ],
     },
   ];

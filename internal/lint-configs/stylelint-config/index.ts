@@ -1,5 +1,9 @@
 export default {
-  extends: ['stylelint-config-standard', 'stylelint-config-recess-order'],
+  extends: [
+    'stylelint-config-standard',
+    'stylelint-config-recess-order',
+    'stylelint-config-recommended-vue',
+  ],
   ignoreFiles: [
     '**/*.js',
     '**/*.jsx',
@@ -29,11 +33,22 @@ export default {
     },
     {
       customSyntax: 'postcss-less',
-      extends: [
-        'stylelint-config-standard-less',
-        'stylelint-config-recommended-vue/less',
-      ],
+      extends: ['stylelint-config-standard-less'],
       files: ['*.less', '**/*.less'],
+      rules: {
+        'selector-pseudo-class-no-unknown': [
+          true,
+          {
+            ignorePseudoClasses: ['global', 'deep', 'slotted'],
+          },
+        ],
+        'selector-pseudo-element-no-unknown': [
+          true,
+          {
+            ignorePseudoElements: ['v-deep', 'v-global', 'v-slotted'],
+          },
+        ],
+      },
     },
   ],
   plugins: [
