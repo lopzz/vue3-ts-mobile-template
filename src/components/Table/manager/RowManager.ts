@@ -132,4 +132,14 @@ export class RowManager {
     }
     return this.getSelectionCount() === this.nodes.length;
   }
+  // 判断是否只选择了一部分
+  isIndeterminateSelected(): boolean {
+    if (this.nodes.length === 0) {
+      return false;
+    }
+    return (
+      this.getSelectionCount() > 0 &&
+      this.getSelectionCount() < this.nodes.length
+    );
+  }
 }

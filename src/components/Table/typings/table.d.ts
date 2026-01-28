@@ -56,6 +56,7 @@ interface GridOptions {
   getRowId?: (data: RowData) => string;
   rowHeight?: number | ((params: RowHeightParams) => number);
   rowSelection?: RowSelectionOptions;
+  border?: boolean | ((params: BorderParams) => string);
 }
 
 // 表头点击

@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { inject, computed } from 'vue';
 import type { Ref } from 'vue';
+import Checkbox from './Checkbox/Checkbox.vue';
+
 import type {
   ColumnDef,
   GridOptions,
@@ -91,10 +93,10 @@ const toggleSelection = (e: Event) => {
     @click="handleClickHeader(column)"
   >
     <template v-if="column.headerCheckboxSelection">
-      <input
-        type="checkbox"
+      <Checkbox
         :checked="api.isAllSelected()"
         @change="toggleSelection"
+        :indeterminate="api.isIndeterminateSelected()"
       />
     </template>
     <div v-else>{{ getHeaderValue(column) }}</div>

@@ -1,17 +1,9 @@
 // GridApi.ts
 import { RowManager } from './RowManager';
-import type {
-  RowData,
-  RowNode,
-  GridApi as IGridApi,
-  SelectionChangedEvent,
-} from '../typings';
-
-type EventHandler = (event: SelectionChangedEvent) => void;
+import type { RowData, RowNode, GridApi as IGridApi } from '../typings';
 
 export class GridApi implements IGridApi {
   private rowManager: RowManager;
-  private selectionHandlers: EventHandler[] = [];
 
   constructor(rowManager: RowManager) {
     this.rowManager = rowManager;
@@ -75,6 +67,11 @@ export class GridApi implements IGridApi {
   // 判断是否全选
   isAllSelected(): boolean {
     return this.rowManager.isAllSelected();
+  }
+
+  // 判断是否只选择了一部分
+  isIndeterminateSelected(): boolean {
+    return this.rowManager.isIndeterminateSelected();
   }
 
   // 设置数据

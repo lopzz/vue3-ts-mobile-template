@@ -12,6 +12,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    Checkbox: typeof import('./src/components/Table/components/Checkbox/Checkbox.vue')['default']
     HeaderCell: typeof import('./src/components/Table/components/HeaderCell.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
@@ -28,6 +29,7 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const Checkbox: typeof import('./src/components/Table/components/Checkbox/Checkbox.vue')['default']
   const HeaderCell: typeof import('./src/components/Table/components/HeaderCell.vue')['default']
   const IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
   const RouterLink: typeof import('vue-router')['RouterLink']

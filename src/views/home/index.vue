@@ -10,7 +10,7 @@ import type {
 
 defineOptions({ name: 'Home' });
 
-const rowData = ref([
+const data = [
   {
     a: 1,
     b: 2,
@@ -33,25 +33,30 @@ const rowData = ref([
     h: 4,
     i: 5,
   },
-]);
+];
+const rowData = ref(
+  Array(10)
+    .fill([...data])
+    .flat(),
+);
 const columnDefs = ref<ColumnDef[]>([
   {
     headerName: '',
     field: 'ag-Grid-AutoColumn',
     checkboxSelection: true,
     headerCheckboxSelection: true,
-    width: 30,
-    pinned: 'left',
+    width: 35,
     align: 'left',
+    pinned: 'left',
   },
   {
     field: '',
     headerName: '序号',
-    pinned: 'left',
     width: '50px',
     valueGetter: (params) => {
       return params.node.rowIndex;
     },
+    pinned: 'left',
   },
   {
     field: 'a',
@@ -70,11 +75,11 @@ const columnDefs = ref<ColumnDef[]>([
       params.api.forEachRow((row) => {
         console.warn('row', row);
       });
+      // params.node.rowIndex % 2 === 0 && params.api.selectNode(params.node);
       return {
         backgroundColor: params.value % 2 === 0 ? 'red' : 'blue',
       };
     },
-    pinned: 'left',
   },
   {
     field: 'b',
@@ -110,12 +115,12 @@ const columnDefs = ref<ColumnDef[]>([
     field: 'h',
     headerName: '第8列',
     width: '100px',
+    pinned: 'right',
   },
   {
     field: 'i',
     headerName: '第9列',
     width: '100px',
-    pinned: 'right',
   },
 ]);
 
@@ -123,11 +128,15 @@ const gridOptions = ref<GridOptions>({
   tooltipShow: false,
   rowSelection: {
     mode: 'multiple',
-    enableClickSelection: true,
+    // enableClickSelection: true,
   },
   rowHeight: (params) => {
     console.warn('rowHeight params', params);
     return params.node.rowIndex % 2 === 0 ? 60 : 40;
+  },
+  border: (params) => {
+    console.warn(55555555, params);
+    return '2px solid purple';
   },
   context: {
     ccc: 3,
@@ -140,17 +149,31 @@ const selectionChanged = (selectionChanegedEvent: SelectionChangedEvent) => {
 </script>
 
 <template>
-  <van-nav-bar title="审计管理移动应用" safe-area-inset-top />
-  <Table
-    :row-data="rowData"
-    :column-defs="columnDefs"
-    :grid-options="gridOptions"
-    @selection-changed="selectionChanged"
-  />
-  <Content :collapse="true" :scroll-to-active="false" />
+  <div class="home">
+    <van-nav-bar title="审计管理移动应用" safe-area-inset-top />
+    <Table
+      :row-data="rowData"
+      :column-defs="columnDefs"
+      :grid-options="gridOptions"
+      @selection-changed="selectionChanged"
+    />
+    <Content :collapse="true" :scroll-to-active="false" />
+  </div>
 </template>
 
 <style lang="less" scoped>
+.home {
+  display: flex;
+  flex-direction: column;
+}
+
+.table {
+  flex: 1;
+  min-height: 0;
+  max-height: 500px;
+  margin: 10px;
+}
+
 .aa {
   color: red;
   background: blue;

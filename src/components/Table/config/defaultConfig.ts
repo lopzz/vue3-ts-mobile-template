@@ -5,6 +5,7 @@ const defaultGridOptions: GridOptions = {
   tooltipTriggerType: 'longPress',
   tooltipShowDelay: 0,
   rowHeight: 40,
+  border: true,
 };
 
 export { defaultGridOptions };

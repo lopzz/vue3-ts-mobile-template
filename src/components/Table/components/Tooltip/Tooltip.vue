@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
 import { inject, watch, ref } from 'vue';
-import type { ComponentPublicInstance } from 'vue';
+import type { Ref, ComponentPublicInstance } from 'vue';
 
 import type {
   ColumnDef,
@@ -12,6 +12,7 @@ import type {
 } from '../../typings/index';
 import { isFunction } from '../../config/utils';
 import { Tooltip } from './tooltip.ts';
+import { GridApi } from '../../manager/GridApi';
 
 const props = withDefaults(
   defineProps<{
@@ -30,10 +31,18 @@ const gridOptions: GridOptions = inject('gridOptions') as GridOptions;
 const tooltipRendererComponents: TooltipRendererComponents = inject(
   'tooltipRendererComponents',
 ) as TooltipRendererComponents;
+const api = inject('api') as Ref<GridApi>;
 
 const getTooltipValue = (row: RowData, column: ColumnDef) => {
   let value = row[column.tooltipField || column.field];
-  const params = { row, column, value, context: gridOptions.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+    context: gridOptions.context,
+  };
   if (column.valueGetter) {
     value = column.valueGetter(params);
     params.value = column.valueGetter(params);
@@ -44,7 +53,14 @@ const getTooltipValue = (row: RowData, column: ColumnDef) => {
 
 const getTooltipRenderer = (row: RowData, column: ColumnDef) => {
   const value = row[column.tooltipField || column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+    context: gridOptions?.context,
+  };
   let rendererType = '';
   if (column?.tooltipRendererSelector) {
     rendererType = 'component';
@@ -71,7 +87,14 @@ const getTooltipRenderer = (row: RowData, column: ColumnDef) => {
 };
 const getTooltipRendererComponent = (row: RowData, column: ColumnDef) => {
   const value = row[column.tooltipField || column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+    context: gridOptions?.context,
+  };
   let componentName: string | undefined = '';
   if (column?.tooltipRendererSelector) {
     componentName = column.tooltipRendererSelector(params)?.component;
@@ -92,7 +115,14 @@ const getTooltipRendererParams = (
   column: ColumnDef,
 ): CusTomGridParams => {
   const value = row[column.tooltipField || column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+    context: gridOptions?.context,
+  };
   let cellRendererParams = {};
   if (column?.tooltipRendererSelector) {
     cellRendererParams = column.tooltipRendererSelector(params)?.params;

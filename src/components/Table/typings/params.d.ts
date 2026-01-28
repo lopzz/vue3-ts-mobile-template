@@ -26,4 +26,15 @@ interface RowHeightParams {
   context?: Context;
 }
 
-export type { HeaderParams, GridParams, CusTomGridParams, RowHeightParams };
+interface BorderParams {
+  api: GridApi;
+  context?: Context;
+}
+
+export type {
+  HeaderParams,
+  GridParams,
+  CusTomGridParams,
+  RowHeightParams,
+  BorderParams,
+};

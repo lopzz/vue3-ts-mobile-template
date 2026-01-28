@@ -1,4 +1,6 @@
 .table {
+  --border: hsl(217deg 16% 90% / 100%);
+
   display: flex;
   flex-direction: column;
 }
@@ -12,7 +14,7 @@
   padding: 10px;
   font-size: 12px;
   font-weight: 400;
-  color: #2b313f;
+  color: hsl(220deg 100% 15% / 100%);
   overflow-wrap: break-word;
 }
 
@@ -21,12 +23,13 @@
   align-items: center;
   font-size: 12px;
   font-weight: 400;
-  color: #5a6275;
+  color: hsl(220deg 100% 15% / 100%);
 }
 
 .table-header {
+  flex-shrink: 0;
   overflow-x: auto;
-  background-color: #f9fafb;
+  background: hsl(220deg 84% 95% / 100%);
 }
 
 .table-content {
@@ -34,8 +37,6 @@
 }
 
 .scroll-table {
-  height: 247px;
-
   .table-content-scroll-container {
     flex: 1;
     height: 0;
@@ -79,6 +80,19 @@
   scrollbar-width: none;
 }
 
+.vertical-scroll {
+  width: 35px;
+  min-width: 35px;
+  max-width: 35px;
+  height: 100%;
+  overflow-y: auto;
+  background: red;
+
+  .vertical-scroll-container {
+    height: 1000px;
+  }
+}
+
 // 排序图标
 .sort-container {
   display: flex;
@@ -120,4 +134,26 @@
 
 .sort-icon-desc::before {
   background-image: url('../assets/sort/default-sort-desc.svg');
+}
+
+// 边框
+.border-table {
+  border: var(--border);
+
+  .table-row {
+    .table-cell {
+      border-right: var(--border);
+      border-bottom: var(--border);
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+
+    &:last-child {
+      .table-cell {
+        border-bottom: none;
+      }
+    }
+  }
 }

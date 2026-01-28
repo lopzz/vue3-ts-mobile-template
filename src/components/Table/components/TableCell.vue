@@ -2,6 +2,7 @@
 <script lang="ts" setup>
 import { inject } from 'vue';
 import type { Ref } from 'vue';
+import Checkbox from './Checkbox/Checkbox.vue';
 import type {
   ColumnDef,
   RowData,
@@ -80,7 +81,6 @@ const getCellValue = (row: RowData, column: ColumnDef) => {
     value,
     node: api.value.getRowNode(row._id)!,
     api: api.value,
-
     context: gridOptions?.context,
   };
   if (column.valueGetter) {
@@ -172,6 +172,9 @@ const getCellRendererParams = (
 };
 
 const toggleSelection = (e: Event) => {
+  if (gridOptions.rowSelection?.enableClickSelection) {
+    return;
+  }
   const checked = (e.target as HTMLInputElement).checked;
   const rowNode = api.value.getRowNode(props.row._id);
   if (!rowNode) return;
@@ -223,9 +226,8 @@ const emitsSelectionChanged = () => {
       <span v-else v-html="getCellRendererComponent(row, column)"></span>
     </template>
     <template v-else-if="column.checkboxSelection">
-      <input
-        type="checkbox"
-        :checked="api.getRowNode(row._id)?.isSelected() || false"
+      <Checkbox
+        :checked="api.getRowNode(row._id)?.isSelected()"
         @change="toggleSelection"
       />
     </template>
@@ -234,3 +236,5 @@ const emitsSelectionChanged = () => {
     </span>
   </div>
 </template>
+
+<style lang="less" scoped></style>

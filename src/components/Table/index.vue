@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
-import { ref, provide, watch, onMounted, onBeforeMount, nextTick } from 'vue';
+import { ref, provide, watch, onBeforeMount, nextTick } from 'vue';
 import type { Ref } from 'vue';
 // 组件
 import HeaderCell from './components/HeaderCell.vue';
@@ -251,6 +251,7 @@ const headerSelectionChanged = (
 const currentRow: Ref<RowData> = ref({});
 const currentColumn: Ref<ColumnDef> = ref({} as ColumnDef);
 const tooltipCellRef = ref();
+const tableContentContainerRef = ref();
 const showTooltip = (e: Event, row: RowData, column: ColumnDef) => {
   if (!tooltipCellRef.value) return;
   currentRow.value = row;
@@ -281,6 +282,7 @@ const handleClickCell = (e: Event, row: RowData, column: ColumnDef) => {
   }
 };
 
+// 行高
 const getRowStyle = (row: RowData) => {
   const rowHeight = innerGridOptions.rowHeight;
   const params = {
@@ -295,13 +297,22 @@ const getRowStyle = (row: RowData) => {
   };
 };
 
-// 表格初始化
-const mounted = ref(false);
-onMounted(() => {
-  mounted.value = true;
-});
-
-const tableContentContainerRef = ref();
+// 表格边框
+const hasBorder = () => {
+  const border = innerGridOptions.border;
+  if (isFunction(border)) {
+    const params = {
+      api: api.value,
+      context: innerGridOptions?.context,
+    };
+    // 设置css变量值
+    const element = document.querySelector(
+      '.table.border-table',
+    ) as HTMLElement;
+    element && element.style.setProperty('--border', border(params));
+  }
+  if (border) return true;
+};
 
 // 准备表格api，建立node和data的映射关系
 const gridReady = ref(false);
@@ -337,147 +348,159 @@ watch(
 </script>
 
 <template>
-  <div class="scroll-table table" v-if="gridReady">
-    <div
-      ref="tableHeaderRef"
-      class="table-header table-row"
-      @scroll="(e) => handleScrollContainer(e, 'header')"
-    >
-      <div class="pinned-left-header-container">
-        <!-- Render pinned left columns -->
-        <HeaderCell
-          v-for="(column, index) in pinnedLeftColumnDefs"
-          :key="`header-left-${index}`"
-          :class="{
-            'cell-last-left-pinned': index === pinnedLeftColumnDefs.length - 1,
-          }"
-          :column="column"
-          @column-header-clicked="handleClickHeader"
-          @selection-changed="headerSelectionChanged"
-        />
-      </div>
+  <div class="scroll-table table" :class="{ 'border-table': hasBorder() }">
+    <template v-if="gridReady">
       <div
-        ref="headerContainerRef"
-        class="header-container"
-        @scroll="(e) => handleScrollNotPinned(e, 'header')"
+        ref="tableHeaderRef"
+        class="table-header table-row"
+        @scroll="(e) => handleScrollContainer(e, 'header')"
       >
-        <!-- Render unpinned columns -->
-        <HeaderCell
-          v-for="(column, index) in notPinnedColumnDefs"
-          :key="`header-center-${index}`"
-          :column="column"
-          @column-header-clicked="handleClickHeader"
-          @selection-changed="headerSelectionChanged"
-        />
-      </div>
-      <div class="pinned-right-header-container">
-        <!-- Render pinned right columns -->
-        <HeaderCell
-          v-for="(column, index) in pinnedRightColumnDefs"
-          :key="`header-right-${index}`"
-          :class="{ 'cell-first-right-pinned': index === 0 }"
-          :column="column"
-          @column-header-clicked="handleClickHeader"
-          @selection-changed="headerSelectionChanged"
-        />
-      </div>
-    </div>
-    <div
-      ref="tableContentScrollContainerRef"
-      class="table-content-scroll-container"
-      @scroll="(e) => handleScrollContainer(e, 'content')"
-    >
-      <div
-        id="table-content-container"
-        ref="tableContentContainerRef"
-        class="table-content-container"
-      >
-        <div class="table-content">
-          <div class="pinned-left-cols-container">
-            <div
-              v-for="(row, rowIndex) in innerRowData"
-              :key="rowIndex"
-              class="table-row"
-              :style="getRowStyle(row)"
-            >
-              <!-- Render pinned left columns -->
-              <TableCell
-                v-for="(column, index) in pinnedLeftColumnDefs"
-                :key="`cell-left-${index}`"
-                :class="{
-                  'cell-last-left-pinned':
-                    index === pinnedLeftColumnDefs.length - 1,
-                }"
-                :row="row"
-                :column="column"
-                @touchstart="(e: Event) => handleTouchStartCell(e, row, column)"
-                @touchend="(e: Event) => handleTouchEndCell()"
-                @contextmenu.prevent
-                @click="(e: Event) => handleClickCell(e, row, column)"
-                @selection-changed="selectionChanged"
-              />
-            </div>
-          </div>
-          <div
-            ref="colsContainerRef"
-            class="cols-container"
-            @scroll="(e) => handleScrollNotPinned(e, 'content')"
-          >
-            <div
-              v-for="(row, rowIndex) in innerRowData"
-              :key="rowIndex"
-              class="table-row"
-              :style="getRowStyle(row)"
-            >
-              <!-- Render unpinned columns -->
-              <TableCell
-                v-for="(column, index) in notPinnedColumnDefs"
-                :key="`cell-center-${index}`"
-                :row="row"
-                :column="column"
-                @touchstart="(e: Event) => handleTouchStartCell(e, row, column)"
-                @touchend="(e: Event) => handleTouchEndCell()"
-                @contextmenu.prevent
-                @click="(e: Event) => handleClickCell(e, row, column)"
-                @selection-changed="selectionChanged"
-              />
-            </div>
-          </div>
-          <div class="pinned-right-cols-container">
-            <div
-              v-for="(row, rowIndex) in innerRowData"
-              :key="rowIndex"
-              class="table-row"
-              :style="getRowStyle(row)"
-            >
-              <!-- Render pinned right columns -->
-              <TableCell
-                v-for="(column, index) in pinnedRightColumnDefs"
-                :key="`cell-right-${index}`"
-                :class="{ 'cell-first-right-pinned': index === 0 }"
-                :row="row"
-                :column="column"
-                @touchstart="(e: Event) => handleTouchStartCell(e, row, column)"
-                @touchend="(e: Event) => handleTouchEndCell()"
-                @contextmenu.prevent
-                @click="(e: Event) => handleClickCell(e, row, column)"
-                @selection-changed="selectionChanged"
-              />
-            </div>
-          </div>
+        <div class="pinned-left-header-container">
+          <!-- Render pinned left columns -->
+          <HeaderCell
+            v-for="(column, index) in pinnedLeftColumnDefs"
+            :key="`header-left-${index}`"
+            :class="{
+              'cell-last-left-pinned':
+                index === pinnedLeftColumnDefs.length - 1,
+            }"
+            :column="column"
+            @column-header-clicked="handleClickHeader"
+            @selection-changed="headerSelectionChanged"
+          />
+        </div>
+        <div
+          ref="headerContainerRef"
+          class="header-container"
+          @scroll="(e) => handleScrollNotPinned(e, 'header')"
+        >
+          <!-- Render unpinned columns -->
+          <HeaderCell
+            v-for="(column, index) in notPinnedColumnDefs"
+            :key="`header-center-${index}`"
+            :column="column"
+            @column-header-clicked="handleClickHeader"
+            @selection-changed="headerSelectionChanged"
+          />
+        </div>
+        <div class="pinned-right-header-container">
+          <!-- Render pinned right columns -->
+          <HeaderCell
+            v-for="(column, index) in pinnedRightColumnDefs"
+            :key="`header-right-${index}`"
+            :class="{ 'cell-first-right-pinned': index === 0 }"
+            :column="column"
+            @column-header-clicked="handleClickHeader"
+            @selection-changed="headerSelectionChanged"
+          />
         </div>
       </div>
-    </div>
+      <div
+        ref="tableContentScrollContainerRef"
+        class="table-content-scroll-container"
+        @scroll="(e) => handleScrollContainer(e, 'content')"
+      >
+        <div
+          id="table-content-container"
+          ref="tableContentContainerRef"
+          class="table-content-container"
+        >
+          <div class="table-content">
+            <div class="pinned-left-cols-container">
+              <div
+                v-for="(row, rowIndex) in innerRowData"
+                :key="rowIndex"
+                class="table-row"
+                :style="getRowStyle(row)"
+              >
+                <!-- Render pinned left columns -->
+                <TableCell
+                  v-for="(column, index) in pinnedLeftColumnDefs"
+                  :key="`cell-left-${index}`"
+                  :class="{
+                    'cell-last-left-pinned':
+                      index === pinnedLeftColumnDefs.length - 1,
+                  }"
+                  :row="row"
+                  :column="column"
+                  @touchstart="
+                    (e: Event) => handleTouchStartCell(e, row, column)
+                  "
+                  @touchend="(e: Event) => handleTouchEndCell()"
+                  @contextmenu.prevent
+                  @click="(e: Event) => handleClickCell(e, row, column)"
+                  @selection-changed="selectionChanged"
+                />
+              </div>
+            </div>
+            <div
+              ref="colsContainerRef"
+              class="cols-container"
+              @scroll="(e) => handleScrollNotPinned(e, 'content')"
+            >
+              <div
+                v-for="(row, rowIndex) in innerRowData"
+                :key="rowIndex"
+                class="table-row"
+                :style="getRowStyle(row)"
+              >
+                <!-- Render unpinned columns -->
+                <TableCell
+                  v-for="(column, index) in notPinnedColumnDefs"
+                  :key="`cell-center-${index}`"
+                  :row="row"
+                  :column="column"
+                  @touchstart="
+                    (e: Event) => handleTouchStartCell(e, row, column)
+                  "
+                  @touchend="(e: Event) => handleTouchEndCell()"
+                  @contextmenu.prevent
+                  @click="(e: Event) => handleClickCell(e, row, column)"
+                  @selection-changed="selectionChanged"
+                />
+              </div>
+            </div>
+            <div class="pinned-right-cols-container">
+              <div
+                v-for="(row, rowIndex) in innerRowData"
+                :key="rowIndex"
+                class="table-row"
+                :style="getRowStyle(row)"
+              >
+                <!-- Render pinned right columns -->
+                <TableCell
+                  v-for="(column, index) in pinnedRightColumnDefs"
+                  :key="`cell-right-${index}`"
+                  :class="{ 'cell-first-right-pinned': index === 0 }"
+                  :row="row"
+                  :column="column"
+                  @touchstart="
+                    (e: Event) => handleTouchStartCell(e, row, column)
+                  "
+                  @touchend="(e: Event) => handleTouchEndCell()"
+                  @contextmenu.prevent
+                  @click="(e: Event) => handleClickCell(e, row, column)"
+                  @selection-changed="selectionChanged"
+                />
+              </div>
+            </div>
+          </div>
+          <!-- <div class="vertical-scroll">
+            <div class="vertical-scroll-container"></div>
+          </div> -->
+        </div>
+      </div>
+    </template>
+    <teleport v-if="gridReady" to="#table-content-container">
+      <Tooltip
+        v-if="innerGridOptions.tooltipShow"
+        ref="tooltipCellRef"
+        :row="currentRow"
+        :column="currentColumn"
+        :content-element-ref="tableContentContainerRef"
+      />
+    </teleport>
   </div>
-  <teleport v-if="mounted" to="#table-content-container">
-    <Tooltip
-      v-if="innerGridOptions.tooltipShow"
-      ref="tooltipCellRef"
-      :row="currentRow"
-      :column="currentColumn"
-      :content-element-ref="tableContentContainerRef"
-    />
-  </teleport>
 </template>
 
 <style lang="less" scoped>

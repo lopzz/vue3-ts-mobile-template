@@ -17,6 +17,7 @@ interface GridApi {
   deselectNode(node: RowNode): void;
   toggleNodeSelection(node: RowNode): void;
   isAllSelected(): boolean;
+  isIndeterminateSelected(): boolean;
 
   // 数据操作
   setData(data: RowData[]): void;
