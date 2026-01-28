@@ -2,7 +2,11 @@
 import { ref } from 'vue';
 import Content from './components/Content.vue';
 import Table from '@/components/Table/index.vue';
-import type { ColumnDef } from '@/components/table/config/types.d.ts';
+import type {
+  ColumnDef,
+  GridOptions,
+  SelectionChangedEvent,
+} from '@/components/Table/typings';
 
 defineOptions({ name: 'Home' });
 
@@ -32,19 +36,49 @@ const rowData = ref([
 ]);
 const columnDefs = ref<ColumnDef[]>([
   {
+    headerName: '',
+    field: 'ag-Grid-AutoColumn',
+    checkboxSelection: true,
+    headerCheckboxSelection: true,
+    width: 30,
+    pinned: 'left',
+    align: 'left',
+  },
+  {
+    field: '',
+    headerName: '序号',
+    pinned: 'left',
+    width: '50px',
+    valueGetter: (params) => {
+      return params.node.rowIndex;
+    },
+  },
+  {
     field: 'a',
     headerName: '第一列',
     width: '100px',
     sortable: true,
     comparator: ({ valueA, valueB, column }) => {
-      return column.sortOrder === 'asc' ? valueA - valueB : valueB - valueA;
+      const numValueA = Number(valueA);
+      const numValueB = Number(valueB);
+      return column.sortOrder === 'asc'
+        ? numValueA - numValueB
+        : numValueB - numValueA;
+    },
+    cellStyle: (params) => {
+      console.warn(111, params);
+      params.api.forEachRow((row) => {
+        console.warn('row', row);
+      });
+      return {
+        backgroundColor: params.value % 2 === 0 ? 'red' : 'blue',
+      };
     },
     pinned: 'left',
   },
   {
     field: 'b',
     headerName: '第二列',
-    pinned: 'left',
     width: '100px',
   },
   {
@@ -85,18 +119,33 @@ const columnDefs = ref<ColumnDef[]>([
   },
 ]);
 
-const gridOptions = ref({
+const gridOptions = ref<GridOptions>({
   tooltipShow: false,
+  rowSelection: {
+    mode: 'multiple',
+    enableClickSelection: true,
+  },
+  rowHeight: (params) => {
+    console.warn('rowHeight params', params);
+    return params.node.rowIndex % 2 === 0 ? 60 : 40;
+  },
+  context: {
+    ccc: 3,
+  },
 });
+
+const selectionChanged = (selectionChanegedEvent: SelectionChangedEvent) => {
+  console.warn(3333, selectionChanegedEvent);
+};
 </script>
 
 <template>
   <van-nav-bar title="审计管理移动应用" safe-area-inset-top />
-  sd
   <Table
     :row-data="rowData"
     :column-defs="columnDefs"
     :grid-options="gridOptions"
+    @selection-changed="selectionChanged"
   />
   <Content :collapse="true" :scroll-to-active="false" />
 </template>

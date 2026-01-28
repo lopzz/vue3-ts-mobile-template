@@ -1,10 +1,13 @@
 <script lang="ts" setup>
 import { inject, computed } from 'vue';
+import type { Ref } from 'vue';
 import type {
   ColumnDef,
   GridOptions,
   ColumnHeaderClickedEvent,
-} from '../config/types';
+  HeaderSelectionChangedEvent,
+  GridApi,
+} from '../typings/index';
 import { isFunction, isUnDef } from '../config/utils.ts';
 import { getWidth, getCommonClass } from '../config/table';
 
@@ -22,12 +25,17 @@ const emits = defineEmits<{
     e: 'columnHeaderClicked',
     columnHeaderClickedEvent: ColumnHeaderClickedEvent,
   ): void;
+  (
+    e: 'selectionChanged',
+    selectionChangedEvent: HeaderSelectionChangedEvent,
+  ): void;
 }>();
 
 const gridOptions: GridOptions = inject('gridOptions') as GridOptions;
+const api = inject('api') as Ref<GridApi>;
 
 const getHeaderStyle = (column: ColumnDef) => {
-  const params = { column, context: gridOptions?.context };
+  const params = { column, api: api.value, context: gridOptions?.context };
   const headerStyle =
     (isFunction(column?.headerStyle)
       ? column?.headerStyle?.(params)
@@ -36,7 +44,7 @@ const getHeaderStyle = (column: ColumnDef) => {
 };
 
 const getHeaderClass = (column: ColumnDef) => {
-  const params = { column, context: gridOptions?.context };
+  const params = { column, api: api.value, context: gridOptions?.context };
   return {
     ...getCommonClass({ column, isHeader: true }),
     ...((isFunction(column?.headerClass)
@@ -46,7 +54,7 @@ const getHeaderClass = (column: ColumnDef) => {
 };
 
 const getHeaderValue = (column: ColumnDef) => {
-  const params = { column, context: gridOptions?.context };
+  const params = { column, api: api.value, context: gridOptions?.context };
   if (column.headerValueFormatter) return column.headerValueFormatter(params);
   return column.headerName;
 };
@@ -63,6 +71,16 @@ const noSort = computed(
 );
 const ascSort = computed(() => props.column.sortOrder === 'asc');
 const descSort = computed(() => props.column.sortOrder === 'desc');
+
+const toggleSelection = (e: Event) => {
+  const checked = (e.target as HTMLInputElement).checked;
+  const selectionChangedEvent: HeaderSelectionChangedEvent = {
+    type: 'selectionChanged',
+    column: props.column,
+    checked,
+  };
+  emits('selectionChanged', selectionChangedEvent);
+};
 </script>
 
 <template>
@@ -72,7 +90,14 @@ const descSort = computed(() => props.column.sortOrder === 'desc');
     :style="getHeaderStyle(column)"
     @click="handleClickHeader(column)"
   >
-    <div>{{ getHeaderValue(column) }}</div>
+    <template v-if="column.headerCheckboxSelection">
+      <input
+        type="checkbox"
+        :checked="api.isAllSelected()"
+        @change="toggleSelection"
+      />
+    </template>
+    <div v-else>{{ getHeaderValue(column) }}</div>
     <div v-if="column.sortable" class="sort-container">
       <div
         class="sort-icon-none"

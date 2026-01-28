@@ -1,35 +1,51 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
 import { inject } from 'vue';
+import type { Ref } from 'vue';
 import type {
   ColumnDef,
-  RowDataItem,
+  RowData,
   GridOptions,
   CusTomGridParams,
   CellRendererComponents,
-} from '../config/types';
+  SelectionChangedEvent,
+} from '../typings';
 import { isFunction } from '../config/utils';
 import { getWidth, getCommonClass } from '../config/table';
+import { GridApi } from '../manager/GridApi';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    row: RowDataItem;
+    row: RowData;
     column: ColumnDef;
   }>(),
   {
-    row: () => ({}) as RowDataItem,
+    row: () => ({}) as RowData,
     column: () => ({}) as ColumnDef,
   },
 );
+
+const emits = defineEmits<{
+  (e: 'selectionChanged', selectionChangedEvent: SelectionChangedEvent): void;
+}>();
 
 const gridOptions: GridOptions = inject('gridOptions') as GridOptions;
 const cellRendererComponents: CellRendererComponents = inject(
   'cellRendererComponents',
 ) as CellRendererComponents;
+const api = inject('api') as Ref<GridApi>;
 
-const getCellStyle = (row: RowDataItem, column: ColumnDef) => {
+const getCellStyle = (row: RowData, column: ColumnDef) => {
   const value = row[column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+
+    context: gridOptions?.context,
+  };
   const cellStyle =
     (isFunction(column?.cellStyle)
       ? column?.cellStyle?.(params)
@@ -37,9 +53,17 @@ const getCellStyle = (row: RowDataItem, column: ColumnDef) => {
   return { ...cellStyle, ...getWidth(column) };
 };
 
-const getCellClass = (row: RowDataItem, column: ColumnDef) => {
+const getCellClass = (row: RowData, column: ColumnDef) => {
   const value = row[column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+
+    context: gridOptions?.context,
+  };
   return {
     ...getCommonClass({ column, isHeader: false }),
     ...((isFunction(column?.cellClass)
@@ -48,9 +72,17 @@ const getCellClass = (row: RowDataItem, column: ColumnDef) => {
   };
 };
 
-const getCellValue = (row: RowDataItem, column: ColumnDef) => {
+const getCellValue = (row: RowData, column: ColumnDef) => {
   let value = row[column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+
+    context: gridOptions?.context,
+  };
   if (column.valueGetter) {
     value = column.valueGetter(params);
     params.value = column.valueGetter(params);
@@ -59,9 +91,17 @@ const getCellValue = (row: RowDataItem, column: ColumnDef) => {
   return value;
 };
 
-const getCellRenderer = (row: RowDataItem, column: ColumnDef) => {
+const getCellRenderer = (row: RowData, column: ColumnDef) => {
   const value = row[column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+
+    context: gridOptions?.context,
+  };
   let cellRendererType = '';
   if (column?.cellRendererSelector) {
     cellRendererType = 'component';
@@ -86,9 +126,17 @@ const getCellRenderer = (row: RowDataItem, column: ColumnDef) => {
       : !!column?.cellRenderer,
   };
 };
-const getCellRendererComponent = (row: RowDataItem, column: ColumnDef) => {
+const getCellRendererComponent = (row: RowData, column: ColumnDef) => {
   const value = row[column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+
+    context: gridOptions?.context,
+  };
   let componentName: string | undefined = '';
   if (column?.cellRendererSelector) {
     componentName = column.cellRendererSelector(params)?.component;
@@ -103,16 +151,59 @@ const getCellRendererComponent = (row: RowDataItem, column: ColumnDef) => {
 };
 
 const getCellRendererParams = (
-  row: RowDataItem,
+  row: RowData,
   column: ColumnDef,
 ): CusTomGridParams => {
   const value = row[column.field];
-  const params = { row, column, value, context: gridOptions?.context };
+  const params = {
+    row,
+    column,
+    value,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+
+    context: gridOptions?.context,
+  };
   let cellRendererParams = {};
   if (column?.cellRendererSelector) {
     cellRendererParams = column.cellRendererSelector(params)?.params;
   }
   return { ...params, ...cellRendererParams };
+};
+
+const toggleSelection = (e: Event) => {
+  const checked = (e.target as HTMLInputElement).checked;
+  const rowNode = api.value.getRowNode(props.row._id);
+  if (!rowNode) return;
+  if (checked) {
+    api.value.selectNode(rowNode, false);
+  } else {
+    api.value.deselectNode(rowNode);
+  }
+  emitsSelectionChanged();
+};
+
+const handleClickCell = (row: RowData) => {
+  // 行选择
+  if (gridOptions.rowSelection?.enableClickSelection) {
+    const rowNode = api.value.getRowNode(row._id);
+    if (!rowNode) return;
+    if (rowNode.isSelected()) {
+      api.value.deselectNode(rowNode);
+    } else {
+      api.value.selectNode(rowNode, false);
+    }
+    emitsSelectionChanged();
+  }
+};
+
+const emitsSelectionChanged = () => {
+  emits('selectionChanged', {
+    type: 'selectionChanged',
+    selectedNodes: api.value.getSelectedNodes(),
+    selectedData: api.value.getSelectedRows(),
+    selectionCount: api.value.getSelectedRows().length,
+  });
 };
 </script>
 
@@ -121,6 +212,7 @@ const getCellRendererParams = (
     class="pinned-left table-cell"
     :class="getCellClass(row, column)"
     :style="getCellStyle(row, column)"
+    @click="handleClickCell(row)"
   >
     <template v-if="getCellRenderer(row, column).hasComponent">
       <component
@@ -129,6 +221,13 @@ const getCellRendererParams = (
         :params="getCellRendererParams(row, column)"
       />
       <span v-else v-html="getCellRendererComponent(row, column)"></span>
+    </template>
+    <template v-else-if="column.checkboxSelection">
+      <input
+        type="checkbox"
+        :checked="api.getRowNode(row._id)?.isSelected() || false"
+        @change="toggleSelection"
+      />
     </template>
     <span v-else>
       {{ getCellValue(row, column) }}

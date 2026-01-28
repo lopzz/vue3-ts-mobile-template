@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
-import { ref, provide, watch, onMounted } from 'vue';
+import { ref, provide, watch, onMounted, onBeforeMount, nextTick } from 'vue';
 import type { Ref } from 'vue';
 // 组件
 import HeaderCell from './components/HeaderCell.vue';
@@ -9,22 +9,27 @@ import Tooltip from './components/Tooltip/Tooltip.vue';
 // 类型
 import type {
   ColumnDef,
-  RowDataItem,
+  RowData,
   GridOptions,
   CellRendererComponents,
   TooltipRendererComponents,
   SortChangedEvent,
   ColumnHeaderClickedEvent,
-} from './config/types';
+  SelectionChangedEvent,
+  HeaderSelectionChangedEvent,
+} from './typings';
 // 工具方法
-import { isNumber, isNull, isUnDef } from './config/utils';
+import { isNumber, isNull, isUnDef, isFunction } from './config/utils';
 import { defaultGridOptions } from './config/defaultConfig';
 import { defu } from 'defu';
+
+import { RowManager } from './manager/RowManager';
+import { GridApi } from './manager/GridApi';
 
 const props = withDefaults(
   defineProps<{
     columnDefs?: Array<ColumnDef>;
-    rowData?: Array<RowDataItem>;
+    rowData?: Array<RowData>;
     gridOptions?: GridOptions;
     cellRendererComponents?: CellRendererComponents;
     tooltipRendererComponents?: TooltipRendererComponents;
@@ -40,13 +45,19 @@ const props = withDefaults(
 
 const emits = defineEmits<{
   (e: 'sortChanged', sortChangedEvent: SortChangedEvent): void;
+  (e: 'gridReady', gridReadyEvent: { api: GridApi; columnApi: any }): void;
+  (e: 'selectionChanged', selectionChangedEvent: SelectionChangedEvent): void;
 }>();
 
-const innerRowData: Ref<Array<RowDataItem>> = ref([...props.rowData]);
+const innerRowData: Ref<Array<RowData>> = ref([...props.rowData]);
+
 watch(
   () => props.rowData,
   (newVal) => {
     innerRowData.value = [...newVal];
+  },
+  {
+    immediate: true,
   },
 );
 
@@ -80,7 +91,7 @@ const innerGridOptions = defu(props.gridOptions, defaultGridOptions);
 
 provide<GridOptions>('gridOptions', innerGridOptions);
 provide<Array<ColumnDef>>('columnDefs', innerColumnDefs.value);
-provide<Array<RowDataItem>>('rowData', innerRowData.value);
+provide<Array<RowData>>('rowData', innerRowData.value);
 provide<CellRendererComponents>(
   'cellRendererComponents',
   props.cellRendererComponents,
@@ -90,6 +101,7 @@ provide<TooltipRendererComponents>(
   props.tooltipRendererComponents,
 );
 
+// 列固定
 const headerContainerRef = ref();
 const colsContainerRef = ref();
 const handleScrollNotPinned = (e: Event, type: 'header' | 'content') => {
@@ -133,17 +145,21 @@ const sort = (column: ColumnDef) => {
     column.sortOrder = 'asc';
   }
 
-  const defaultSortFunc = (rowA: RowDataItem, rowB: RowDataItem) => {
+  const defaultSortFunc = (rowA: RowData, rowB: RowData) => {
     const paramsRowA = {
       row: rowA,
       column,
       value: rowA[column.field],
+      node: api.value.getRowNode(rowA._id)!,
+      api: api.value,
       context: innerGridOptions?.context,
     };
     const paramsRowB = {
       row: rowB,
       column,
       value: rowB[column.field],
+      node: api.value.getRowNode(rowB._id)!,
+      api: api.value,
       context: innerGridOptions?.context,
     };
     const valueA = column.valueGetter
@@ -170,7 +186,7 @@ const sort = (column: ColumnDef) => {
   if (!serverSort) {
     if (['asc', 'desc'].includes(column.sortOrder)) {
       const comparator = column.comparator
-        ? (rowA: RowDataItem, rowB: RowDataItem) =>
+        ? (rowA: RowData, rowB: RowData) =>
             column.comparator!({
               valueA: rowA[column.field],
               valueB: rowB[column.field],
@@ -206,11 +222,36 @@ const resetOtherColumnSort = (notResetColumn: ColumnDef) => {
   });
 };
 
-// toolip
-const currentRow: Ref<RowDataItem> = ref({});
+// 行选择
+const selectionChanged = (selectionChangedEvent: SelectionChangedEvent) => {
+  emits('selectionChanged', selectionChangedEvent);
+};
+
+const headerSelectionChanged = (
+  headerSelectionChangedEvent: HeaderSelectionChangedEvent,
+) => {
+  const { column, checked } = headerSelectionChangedEvent;
+  if (!column.checkboxSelection) return;
+  // 全选或取消全选
+  if (checked) {
+    api.value.selectAll();
+  } else {
+    api.value.deselectAll();
+  }
+  const selectionChangedEvent: SelectionChangedEvent = {
+    type: 'selectionChanged',
+    selectedNodes: api.value.getSelectedNodes(),
+    selectedData: api.value.getSelectedRows(),
+    selectionCount: api.value.getSelectedRows().length,
+  };
+  emits('selectionChanged', selectionChangedEvent);
+};
+
+// tooltip
+const currentRow: Ref<RowData> = ref({});
 const currentColumn: Ref<ColumnDef> = ref({} as ColumnDef);
 const tooltipCellRef = ref();
-const showTooltip = (e: Event, row: RowDataItem, column: ColumnDef) => {
+const showTooltip = (e: Event, row: RowData, column: ColumnDef) => {
   if (!tooltipCellRef.value) return;
   currentRow.value = row;
   currentColumn.value = column;
@@ -218,11 +259,7 @@ const showTooltip = (e: Event, row: RowDataItem, column: ColumnDef) => {
 };
 let pressTimer: number | null = null;
 
-const handleTouchStartCell = (
-  e: Event,
-  row: RowDataItem,
-  column: ColumnDef,
-) => {
+const handleTouchStartCell = (e: Event, row: RowData, column: ColumnDef) => {
   if (innerGridOptions.tooltipTriggerType !== 'longPress') return;
   pressTimer = setTimeout(() => {
     showTooltip(e, row, column);
@@ -234,24 +271,73 @@ const handleTouchEndCell = () => {
   clearTimeout(pressTimer as number);
 };
 
-const handleClickCell = (e: Event, row: RowDataItem, column: ColumnDef) => {
-  if (innerGridOptions.tooltipTriggerType !== 'click') return;
-  const timer = setTimeout(() => {
-    showTooltip(e, row, column);
-    clearTimeout(timer);
-  }, innerGridOptions.tooltipShowDelay);
+const handleClickCell = (e: Event, row: RowData, column: ColumnDef) => {
+  // tooltip
+  if (innerGridOptions.tooltipTriggerType === 'click') {
+    const timer = setTimeout(() => {
+      showTooltip(e, row, column);
+      clearTimeout(timer);
+    }, innerGridOptions.tooltipShowDelay);
+  }
 };
 
+const getRowStyle = (row: RowData) => {
+  const rowHeight = innerGridOptions.rowHeight;
+  const params = {
+    row,
+    node: api.value.getRowNode(row._id)!,
+    api: api.value,
+    context: innerGridOptions?.context,
+  };
+  const height = isFunction(rowHeight) ? rowHeight(params) : rowHeight;
+  return {
+    height: `${height}px`,
+  };
+};
+
+// 表格初始化
 const mounted = ref(false);
 onMounted(() => {
   mounted.value = true;
 });
 
 const tableContentContainerRef = ref();
+
+// 准备表格api，建立node和data的映射关系
+const gridReady = ref(false);
+const api = ref<GridApi>({} as GridApi);
+provide<Ref<GridApi>>('api', api as Ref<GridApi>);
+onBeforeMount(() => {
+  // 创建行管理器
+  const rowManager = new RowManager(
+    innerGridOptions.getRowId,
+    innerGridOptions.rowSelection,
+  );
+
+  // 创建API
+  const gridApi = new GridApi(rowManager);
+  api.value = gridApi;
+  emits('gridReady', { api: gridApi, columnApi: null });
+  nextTick(() => {
+    gridReady.value = true;
+  });
+});
+
+watch(
+  () => props.rowData,
+  (newVal) => {
+    nextTick(() => {
+      api.value?.setData([...newVal]);
+    });
+  },
+  {
+    immediate: true,
+  },
+);
 </script>
 
 <template>
-  <div class="scroll-table table">
+  <div class="scroll-table table" v-if="gridReady">
     <div
       ref="tableHeaderRef"
       class="table-header table-row"
@@ -267,6 +353,7 @@ const tableContentContainerRef = ref();
           }"
           :column="column"
           @column-header-clicked="handleClickHeader"
+          @selection-changed="headerSelectionChanged"
         />
       </div>
       <div
@@ -280,6 +367,7 @@ const tableContentContainerRef = ref();
           :key="`header-center-${index}`"
           :column="column"
           @column-header-clicked="handleClickHeader"
+          @selection-changed="headerSelectionChanged"
         />
       </div>
       <div class="pinned-right-header-container">
@@ -290,6 +378,7 @@ const tableContentContainerRef = ref();
           :class="{ 'cell-first-right-pinned': index === 0 }"
           :column="column"
           @column-header-clicked="handleClickHeader"
+          @selection-changed="headerSelectionChanged"
         />
       </div>
     </div>
@@ -303,12 +392,13 @@ const tableContentContainerRef = ref();
         ref="tableContentContainerRef"
         class="table-content-container"
       >
-        <div v-if="innerRowData.length" class="table-content">
+        <div class="table-content">
           <div class="pinned-left-cols-container">
             <div
               v-for="(row, rowIndex) in innerRowData"
               :key="rowIndex"
               class="table-row"
+              :style="getRowStyle(row)"
             >
               <!-- Render pinned left columns -->
               <TableCell
@@ -324,6 +414,7 @@ const tableContentContainerRef = ref();
                 @touchend="(e: Event) => handleTouchEndCell()"
                 @contextmenu.prevent
                 @click="(e: Event) => handleClickCell(e, row, column)"
+                @selection-changed="selectionChanged"
               />
             </div>
           </div>
@@ -336,6 +427,7 @@ const tableContentContainerRef = ref();
               v-for="(row, rowIndex) in innerRowData"
               :key="rowIndex"
               class="table-row"
+              :style="getRowStyle(row)"
             >
               <!-- Render unpinned columns -->
               <TableCell
@@ -347,6 +439,7 @@ const tableContentContainerRef = ref();
                 @touchend="(e: Event) => handleTouchEndCell()"
                 @contextmenu.prevent
                 @click="(e: Event) => handleClickCell(e, row, column)"
+                @selection-changed="selectionChanged"
               />
             </div>
           </div>
@@ -355,6 +448,7 @@ const tableContentContainerRef = ref();
               v-for="(row, rowIndex) in innerRowData"
               :key="rowIndex"
               class="table-row"
+              :style="getRowStyle(row)"
             >
               <!-- Render pinned right columns -->
               <TableCell
@@ -367,12 +461,10 @@ const tableContentContainerRef = ref();
                 @touchend="(e: Event) => handleTouchEndCell()"
                 @contextmenu.prevent
                 @click="(e: Event) => handleClickCell(e, row, column)"
+                @selection-changed="selectionChanged"
               />
             </div>
           </div>
-        </div>
-        <div v-else class="u-p-t-40">
-          <custom-empty :size="180" />
         </div>
       </div>
     </div>

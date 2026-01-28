@@ -12,9 +12,13 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    HeaderCell: typeof import('./src/components/Table/components/HeaderCell.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Table: typeof import('./src/components/Table/index.vue')['default']
+    TableCell: typeof import('./src/components/Table/components/TableCell.vue')['default']
+    Tooltip: typeof import('./src/components/Table/components/Tooltip/Tooltip.vue')['default']
     VanConfigProvider: typeof import('vant/es')['ConfigProvider']
     VanNavBar: typeof import('vant/es')['NavBar']
     VanTabbar: typeof import('vant/es')['Tabbar']
@@ -24,9 +28,13 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const HeaderCell: typeof import('./src/components/Table/components/HeaderCell.vue')['default']
   const IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
   const RouterLink: typeof import('vue-router')['RouterLink']
   const RouterView: typeof import('vue-router')['RouterView']
+  const Table: typeof import('./src/components/Table/index.vue')['default']
+  const TableCell: typeof import('./src/components/Table/components/TableCell.vue')['default']
+  const Tooltip: typeof import('./src/components/Table/components/Tooltip/Tooltip.vue')['default']
   const VanConfigProvider: typeof import('vant/es')['ConfigProvider']
   const VanNavBar: typeof import('vant/es')['NavBar']
   const VanTabbar: typeof import('vant/es')['Tabbar']

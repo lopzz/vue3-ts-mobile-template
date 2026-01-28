@@ -1,8 +1,17 @@
-import type { ColumnDef } from './types';
+import type { ColumnDef } from '../typings';
+import { isNumber } from './utils';
 
 const getWidth = (column: ColumnDef) => ({
-  width: column.width ? `${column.width}` : 'auto',
-  minWidth: column.minWidth ? `${column.minWidth}` : 'auto',
+  width: column.width
+    ? isNumber(column.width)
+      ? `${column.width}px`
+      : `${column.width}`
+    : 'auto',
+  minWidth: column.minWidth
+    ? isNumber(column.minWidth)
+      ? `${column.minWidth}px`
+      : `${column.minWidth}`
+    : 'auto',
   flex: column.width ? '0 0 auto' : undefined,
 });
 

@@ -5,22 +5,22 @@ import type { ComponentPublicInstance } from 'vue';
 
 import type {
   ColumnDef,
-  RowDataItem,
+  RowData,
   GridOptions,
   CusTomGridParams,
   TooltipRendererComponents,
-} from '../../config/types';
+} from '../../typings/index';
 import { isFunction } from '../../config/utils';
 import { Tooltip } from './tooltip.ts';
 
 const props = withDefaults(
   defineProps<{
-    row: RowDataItem;
+    row: RowData;
     column: ColumnDef;
     contentElementRef: ComponentPublicInstance;
   }>(),
   {
-    row: () => ({}) as RowDataItem,
+    row: () => ({}) as RowData,
     column: () => ({}) as ColumnDef,
     contentElementRef: () => null as unknown as ComponentPublicInstance,
   },
@@ -31,7 +31,7 @@ const tooltipRendererComponents: TooltipRendererComponents = inject(
   'tooltipRendererComponents',
 ) as TooltipRendererComponents;
 
-const getTooltipValue = (row: RowDataItem, column: ColumnDef) => {
+const getTooltipValue = (row: RowData, column: ColumnDef) => {
   let value = row[column.tooltipField || column.field];
   const params = { row, column, value, context: gridOptions.context };
   if (column.valueGetter) {
@@ -42,7 +42,7 @@ const getTooltipValue = (row: RowDataItem, column: ColumnDef) => {
   return value;
 };
 
-const getTooltipRenderer = (row: RowDataItem, column: ColumnDef) => {
+const getTooltipRenderer = (row: RowData, column: ColumnDef) => {
   const value = row[column.tooltipField || column.field];
   const params = { row, column, value, context: gridOptions?.context };
   let rendererType = '';
@@ -69,7 +69,7 @@ const getTooltipRenderer = (row: RowDataItem, column: ColumnDef) => {
       : !!column?.tooltipRenderer,
   };
 };
-const getTooltipRendererComponent = (row: RowDataItem, column: ColumnDef) => {
+const getTooltipRendererComponent = (row: RowData, column: ColumnDef) => {
   const value = row[column.tooltipField || column.field];
   const params = { row, column, value, context: gridOptions?.context };
   let componentName: string | undefined = '';
@@ -88,7 +88,7 @@ const getTooltipRendererComponent = (row: RowDataItem, column: ColumnDef) => {
 };
 
 const getTooltipRendererParams = (
-  row: RowDataItem,
+  row: RowData,
   column: ColumnDef,
 ): CusTomGridParams => {
   const value = row[column.tooltipField || column.field];
