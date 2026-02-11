@@ -35,9 +35,9 @@ const data = [
   },
 ];
 const rowData = ref(
-  Array(10)
-    .fill([...data])
-    .flat(),
+  Array.from({ length: 20 }, () => [
+    ...data.map((item) => ({ ...item })),
+  ]).flat(),
 );
 const columnDefs = ref<ColumnDef[]>([
   {
@@ -71,10 +71,10 @@ const columnDefs = ref<ColumnDef[]>([
         : numValueB - numValueA;
     },
     cellStyle: (params) => {
-      console.warn(111, params);
-      params.api.forEachRow((row) => {
-        console.warn('row', row);
-      });
+      // console.warn(111, params);
+      // params.api.forEachRow((row) => {
+      //   console.warn('row', row);
+      // });
       // params.node.rowIndex % 2 === 0 && params.api.selectNode(params.node);
       return {
         backgroundColor: params.value % 2 === 0 ? 'red' : 'blue',
@@ -85,6 +85,7 @@ const columnDefs = ref<ColumnDef[]>([
     field: 'b',
     headerName: '第二列',
     width: '100px',
+    ellipsis: false,
   },
   {
     field: 'c',
@@ -130,14 +131,15 @@ const gridOptions = ref<GridOptions>({
     mode: 'multiple',
     // enableClickSelection: true,
   },
-  rowHeight: (params) => {
-    console.warn('rowHeight params', params);
-    return params.node.rowIndex % 2 === 0 ? 60 : 40;
-  },
-  border: (params) => {
-    console.warn(55555555, params);
-    return '2px solid purple';
-  },
+  // rowHeight: (params) => {
+  //   // console.warn('rowHeight params', params);
+  //   return params.node.rowIndex % 2 === 0 ? 60 : 40;
+  // },
+  border: false,
+  // border: (params) => {
+  //   // console.warn(55555555, params);
+  //   return '2px solid purple';
+  // },
   context: {
     ccc: 3,
   },

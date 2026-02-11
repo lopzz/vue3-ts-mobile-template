@@ -1,3 +1,5 @@
+@import './scrollbar.less';
+
 .table {
   --border: hsl(217deg 16% 90% / 100%);
 
@@ -38,6 +40,7 @@
 
 .scroll-table {
   .table-content-scroll-container {
+    display: flex;
     flex: 1;
     height: 0;
     overflow: auto;
@@ -46,51 +49,66 @@
 
 .table-content-container {
   position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
 // 列固定
 .pinned-left-header-container {
   display: flex;
+  border-right: 1px solid #e8e8e8;
 }
 
 .pinned-right-header-container {
   display: flex;
-}
-
-.cell-last-left-pinned {
-  border-right: 1px solid #e8e8e8;
-}
-
-.cell-first-right-pinned {
   border-left: 1px solid #e8e8e8;
+}
+
+.pinned-left-header-container,
+.pinned-left-cols-container {
+  position: relative;
+
+  &::after {
+    position: absolute;
+    top: 0;
+    right: -10px;
+    bottom: 0;
+    width: 10px;
+    pointer-events: none;
+    content: '';
+    box-shadow: inset 10px 0 10px -10px rgb(0 0 0 / 15%);
+  }
+}
+
+.pinned-right-header-container,
+.pinned-right-cols-container {
+  position: relative;
+
+  &::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -10px;
+    width: 10px;
+    pointer-events: none;
+    content: '';
+    box-shadow: inset -10px 0 10px -10px rgb(0 0 0 / 15%);
+  }
 }
 
 .header-container {
   display: flex;
   flex: 1;
   width: 0;
-  overflow: auto;
+  overflow-x: auto;
   scrollbar-width: none;
 }
 
 .cols-container {
   flex: 1;
   width: 0;
-  overflow: auto;
+  overflow-x: auto;
   scrollbar-width: none;
-}
-
-.vertical-scroll {
-  width: 35px;
-  min-width: 35px;
-  max-width: 35px;
-  height: 100%;
-  overflow-y: auto;
-  background: red;
-
-  .vertical-scroll-container {
-    height: 1000px;
-  }
 }
 
 // 排序图标

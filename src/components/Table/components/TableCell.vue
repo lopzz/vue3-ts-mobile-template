@@ -212,7 +212,7 @@ const emitsSelectionChanged = () => {
 
 <template>
   <div
-    class="pinned-left table-cell"
+    class="table-cell"
     :class="getCellClass(row, column)"
     :style="getCellStyle(row, column)"
     @click="handleClickCell(row)"
@@ -231,9 +231,9 @@ const emitsSelectionChanged = () => {
         @change="toggleSelection"
       />
     </template>
-    <span v-else>
+    <template v-else>
       {{ getCellValue(row, column) }}
-    </span>
+    </template>
   </div>
 </template>
 

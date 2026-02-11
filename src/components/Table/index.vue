@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
-import { ref, provide, watch, onBeforeMount, nextTick } from 'vue';
+import { ref, provide, watch, onBeforeMount, nextTick, onMounted } from 'vue';
 import type { Ref } from 'vue';
 // 组件
 import HeaderCell from './components/HeaderCell.vue';
@@ -314,6 +314,23 @@ const hasBorder = () => {
   if (border) return true;
 };
 
+// 判断表格是否出现纵向滚动条
+const judgeOverflow = async () => {
+  await nextTick();
+  await nextTick();
+  const element = tableContentScrollContainerRef.value;
+  // 判断逻辑
+  if (element.scrollHeight > element.clientHeight) {
+    const headerCellElements = document.querySelectorAll('.header-cell');
+    const lastHeaderCellElement = headerCellElements[
+      headerCellElements.length - 1
+    ] as HTMLElement;
+    if (lastHeaderCellElement) {
+      lastHeaderCellElement.style.width = `calc(${getComputedStyle(lastHeaderCellElement).width} + 8px)`;
+    }
+  }
+};
+
 // 准备表格api，建立node和data的映射关系
 const gridReady = ref(false);
 const api = ref<GridApi>({} as GridApi);
@@ -332,6 +349,10 @@ onBeforeMount(() => {
   nextTick(() => {
     gridReady.value = true;
   });
+});
+
+onMounted(() => {
+  judgeOverflow();
 });
 
 watch(
@@ -423,10 +444,10 @@ watch(
                   }"
                   :row="row"
                   :column="column"
-                  @touchstart="
+                  @touchstart.passive="
                     (e: Event) => handleTouchStartCell(e, row, column)
                   "
-                  @touchend="(e: Event) => handleTouchEndCell()"
+                  @touchend.passive="(e: Event) => handleTouchEndCell()"
                   @contextmenu.prevent
                   @click="(e: Event) => handleClickCell(e, row, column)"
                   @selection-changed="selectionChanged"
@@ -450,10 +471,10 @@ watch(
                   :key="`cell-center-${index}`"
                   :row="row"
                   :column="column"
-                  @touchstart="
+                  @touchstart.passive="
                     (e: Event) => handleTouchStartCell(e, row, column)
                   "
-                  @touchend="(e: Event) => handleTouchEndCell()"
+                  @touchend.passive="(e: Event) => handleTouchEndCell()"
                   @contextmenu.prevent
                   @click="(e: Event) => handleClickCell(e, row, column)"
                   @selection-changed="selectionChanged"
@@ -474,10 +495,10 @@ watch(
                   :class="{ 'cell-first-right-pinned': index === 0 }"
                   :row="row"
                   :column="column"
-                  @touchstart="
+                  @touchstart.passive="
                     (e: Event) => handleTouchStartCell(e, row, column)
                   "
-                  @touchend="(e: Event) => handleTouchEndCell()"
+                  @touchend.passive="(e: Event) => handleTouchEndCell()"
                   @contextmenu.prevent
                   @click="(e: Event) => handleClickCell(e, row, column)"
                   @selection-changed="selectionChanged"
@@ -485,9 +506,6 @@ watch(
               </div>
             </div>
           </div>
-          <!-- <div class="vertical-scroll">
-            <div class="vertical-scroll-container"></div>
-          </div> -->
         </div>
       </div>
     </template>
