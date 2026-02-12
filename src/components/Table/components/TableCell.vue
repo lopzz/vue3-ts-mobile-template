@@ -11,8 +11,8 @@ import type {
   CellRendererComponents,
   SelectionChangedEvent,
 } from '../typings';
-import { isFunction } from '../config/utils';
-import { getWidth, getCommonClass } from '../config/table';
+import { isFunction } from '../utils/utils';
+import { getWidth, getCommonClass } from '../utils/table';
 import { GridApi } from '../manager/GridApi';
 
 const props = withDefaults(

@@ -10,7 +10,7 @@ import type {
   CusTomGridParams,
   TooltipRendererComponents,
 } from '../../typings/index';
-import { isFunction } from '../../config/utils';
+import { isFunction } from '../../utils/utils.ts';
 import { Tooltip } from './tooltip.ts';
 import { GridApi } from '../../manager/GridApi';
 

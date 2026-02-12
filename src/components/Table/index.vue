@@ -27,7 +27,7 @@ import type {
   HeaderSelectionChangedEvent,
 } from './typings';
 // 工具方法
-import { isNumber, isNull, isUnDef, isFunction } from './config/utils';
+import { isNumber, isNull, isUnDef, isFunction } from './utils/utils';
 import { defaultGridOptions } from './config/defaultConfig';
 import { defu } from 'defu';
 

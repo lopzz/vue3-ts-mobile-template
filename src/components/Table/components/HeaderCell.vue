@@ -10,8 +10,8 @@ import type {
   HeaderSelectionChangedEvent,
   GridApi,
 } from '../typings/index';
-import { isFunction, isUnDef } from '../config/utils.ts';
-import { getWidth, getCommonClass } from '../config/table';
+import { isFunction, isUnDef } from '../utils/utils.ts';
+import { getWidth, getCommonClass } from '../utils/table.ts';
 
 const props = withDefaults(
   defineProps<{
