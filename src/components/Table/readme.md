@@ -41,7 +41,7 @@ cellRenderer: (params) => {
 };
 cellRendererSelector: (params) => {
   return {
-    components: 'ComponentA',
+    component: 'ComponentA',
     params: { a: 1, b: 2 }, // 自定义传入组件的参数
   };
 };

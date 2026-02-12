@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { inject, computed } from 'vue';
-import type { Ref } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 import Checkbox from './Checkbox/Checkbox.vue';
 
 import type {
@@ -33,11 +33,17 @@ const emits = defineEmits<{
   ): void;
 }>();
 
-const gridOptions: GridOptions = inject('gridOptions') as GridOptions;
+const gridOptions: ComputedRef<GridOptions> = inject(
+  'gridOptions',
+) as ComputedRef<GridOptions>;
 const api = inject('api') as Ref<GridApi>;
 
 const getHeaderStyle = (column: ColumnDef) => {
-  const params = { column, api: api.value, context: gridOptions?.context };
+  const params = {
+    column,
+    api: api.value,
+    context: gridOptions.value?.context,
+  };
   const headerStyle =
     (isFunction(column?.headerStyle)
       ? column?.headerStyle?.(params)
@@ -46,7 +52,11 @@ const getHeaderStyle = (column: ColumnDef) => {
 };
 
 const getHeaderClass = (column: ColumnDef) => {
-  const params = { column, api: api.value, context: gridOptions?.context };
+  const params = {
+    column,
+    api: api.value,
+    context: gridOptions.value?.context,
+  };
   return {
     ...getCommonClass({ column, isHeader: true }),
     ...((isFunction(column?.headerClass)
@@ -56,7 +66,11 @@ const getHeaderClass = (column: ColumnDef) => {
 };
 
 const getHeaderValue = (column: ColumnDef) => {
-  const params = { column, api: api.value, context: gridOptions?.context };
+  const params = {
+    column,
+    api: api.value,
+    context: gridOptions.value?.context,
+  };
   if (column.headerValueFormatter) return column.headerValueFormatter(params);
   return column.headerName;
 };

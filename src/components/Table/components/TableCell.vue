@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
 import { inject } from 'vue';
-import type { Ref } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 import Checkbox from './Checkbox/Checkbox.vue';
 import type {
   ColumnDef,
@@ -30,10 +30,12 @@ const emits = defineEmits<{
   (e: 'selectionChanged', selectionChangedEvent: SelectionChangedEvent): void;
 }>();
 
-const gridOptions: GridOptions = inject('gridOptions') as GridOptions;
-const cellRendererComponents: CellRendererComponents = inject(
+const gridOptions: ComputedRef<GridOptions> = inject(
+  'gridOptions',
+) as ComputedRef<GridOptions>;
+const cellRendererComponents: ComputedRef<CellRendererComponents> = inject(
   'cellRendererComponents',
-) as CellRendererComponents;
+) as ComputedRef<CellRendererComponents>;
 const api = inject('api') as Ref<GridApi>;
 
 const getCellStyle = (row: RowData, column: ColumnDef) => {
@@ -45,7 +47,7 @@ const getCellStyle = (row: RowData, column: ColumnDef) => {
     node: api.value.getRowNode(row._id)!,
     api: api.value,
 
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   const cellStyle =
     (isFunction(column?.cellStyle)
@@ -63,7 +65,7 @@ const getCellClass = (row: RowData, column: ColumnDef) => {
     node: api.value.getRowNode(row._id)!,
     api: api.value,
 
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   return {
     ...getCommonClass({ column, isHeader: false }),
@@ -81,11 +83,11 @@ const getCellValue = (row: RowData, column: ColumnDef) => {
     value,
     node: api.value.getRowNode(row._id)!,
     api: api.value,
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   if (column.valueGetter) {
     value = column.valueGetter(params);
-    params.value = column.valueGetter(params);
+    params.value = value;
   }
   if (column.valueFormatter) return column.valueFormatter(params);
   return value;
@@ -100,7 +102,7 @@ const getCellRenderer = (row: RowData, column: ColumnDef) => {
     node: api.value.getRowNode(row._id)!,
     api: api.value,
 
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   let cellRendererType = '';
   if (column?.cellRendererSelector) {
@@ -135,19 +137,23 @@ const getCellRendererComponent = (row: RowData, column: ColumnDef) => {
     node: api.value.getRowNode(row._id)!,
     api: api.value,
 
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   let componentName: string | undefined = '';
   if (column?.cellRendererSelector) {
     componentName = column.cellRendererSelector(params)?.component;
-    return componentName ? cellRendererComponents?.[componentName] : undefined;
+    return componentName
+      ? cellRendererComponents.value?.[componentName]
+      : undefined;
   }
   if (isFunction(column?.cellRenderer)) {
     const htmlStr = column?.cellRenderer?.(params);
     return htmlStr;
   }
   componentName = column?.cellRenderer;
-  return componentName ? cellRendererComponents?.[componentName] : undefined;
+  return componentName
+    ? cellRendererComponents.value?.[componentName]
+    : undefined;
 };
 
 const getCellRendererParams = (
@@ -162,7 +168,7 @@ const getCellRendererParams = (
     node: api.value.getRowNode(row._id)!,
     api: api.value,
 
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   let cellRendererParams = {};
   if (column?.cellRendererSelector) {
@@ -172,7 +178,7 @@ const getCellRendererParams = (
 };
 
 const toggleSelection = (e: Event) => {
-  if (gridOptions.rowSelection?.enableClickSelection) {
+  if (gridOptions.value.rowSelection?.enableClickSelection) {
     return;
   }
   const checked = (e.target as HTMLInputElement).checked;
@@ -188,7 +194,7 @@ const toggleSelection = (e: Event) => {
 
 const handleClickCell = (row: RowData) => {
   // 行选择
-  if (gridOptions.rowSelection?.enableClickSelection) {
+  if (gridOptions.value.rowSelection?.enableClickSelection) {
     const rowNode = api.value.getRowNode(row._id);
     if (!rowNode) return;
     if (rowNode.isSelected()) {

@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
 import { inject, watch, ref } from 'vue';
-import type { Ref, ComponentPublicInstance } from 'vue';
+import type { Ref, ComponentPublicInstance, ComputedRef } from 'vue';
 
 import type {
   ColumnDef,
@@ -27,10 +27,11 @@ const props = withDefaults(
   },
 );
 
-const gridOptions: GridOptions = inject('gridOptions') as GridOptions;
-const tooltipRendererComponents: TooltipRendererComponents = inject(
-  'tooltipRendererComponents',
-) as TooltipRendererComponents;
+const gridOptions: ComputedRef<GridOptions> = inject(
+  'gridOptions',
+) as ComputedRef<GridOptions>;
+const tooltipRendererComponents: ComputedRef<TooltipRendererComponents> =
+  inject('tooltipRendererComponents') as ComputedRef<TooltipRendererComponents>;
 const api = inject('api') as Ref<GridApi>;
 
 const getTooltipValue = (row: RowData, column: ColumnDef) => {
@@ -41,11 +42,11 @@ const getTooltipValue = (row: RowData, column: ColumnDef) => {
     value,
     node: api.value.getRowNode(row._id)!,
     api: api.value,
-    context: gridOptions.context,
+    context: gridOptions.value?.context,
   };
   if (column.valueGetter) {
     value = column.valueGetter(params);
-    params.value = column.valueGetter(params);
+    params.value = value;
   }
   if (column.valueFormatter) return column.valueFormatter(params);
   return value;
@@ -59,7 +60,7 @@ const getTooltipRenderer = (row: RowData, column: ColumnDef) => {
     value,
     node: api.value.getRowNode(row._id)!,
     api: api.value,
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   let rendererType = '';
   if (column?.tooltipRendererSelector) {
@@ -93,13 +94,13 @@ const getTooltipRendererComponent = (row: RowData, column: ColumnDef) => {
     value,
     node: api.value.getRowNode(row._id)!,
     api: api.value,
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   let componentName: string | undefined = '';
   if (column?.tooltipRendererSelector) {
     componentName = column.tooltipRendererSelector(params)?.component;
     return componentName
-      ? tooltipRendererComponents?.[componentName]
+      ? tooltipRendererComponents.value?.[componentName]
       : undefined;
   }
   if (isFunction(column?.tooltipRenderer)) {
@@ -107,7 +108,9 @@ const getTooltipRendererComponent = (row: RowData, column: ColumnDef) => {
     return htmlStr;
   }
   componentName = column?.tooltipRenderer;
-  return componentName ? tooltipRendererComponents?.[componentName] : undefined;
+  return componentName
+    ? tooltipRendererComponents.value?.[componentName]
+    : undefined;
 };
 
 const getTooltipRendererParams = (
@@ -121,7 +124,7 @@ const getTooltipRendererParams = (
     value,
     node: api.value.getRowNode(row._id)!,
     api: api.value,
-    context: gridOptions?.context,
+    context: gridOptions.value?.context,
   };
   let cellRendererParams = {};
   if (column?.tooltipRendererSelector) {
@@ -165,9 +168,9 @@ defineExpose({
           />
           <span v-else v-html="getTooltipRendererComponent(row, column)"></span>
         </template>
-        <span v-else>
+        <template v-else>
           {{ getTooltipValue(row, column) }}
-        </span>
+        </template>
       </div>
       <div class="custom-tooltip-arrow"></div>
     </div>

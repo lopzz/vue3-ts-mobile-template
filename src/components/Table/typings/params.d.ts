@@ -17,7 +17,7 @@ interface GridParams {
   context?: Context;
 }
 
-type CusTomGridParams = GridParams | Record<any, any>;
+type CusTomGridParams = GridParams & Record<any, any>;
 
 interface RowHeightParams {
   row: RowData;

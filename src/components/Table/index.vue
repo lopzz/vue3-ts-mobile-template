@@ -1,7 +1,15 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
-import { ref, provide, watch, onBeforeMount, nextTick, onMounted } from 'vue';
-import type { Ref } from 'vue';
+import {
+  ref,
+  provide,
+  watch,
+  onBeforeMount,
+  nextTick,
+  onMounted,
+  computed,
+} from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 // 组件
 import HeaderCell from './components/HeaderCell.vue';
 import TableCell from './components/TableCell.vue';
@@ -25,6 +33,13 @@ import { defu } from 'defu';
 
 import { RowManager } from './manager/RowManager';
 import { GridApi } from './manager/GridApi';
+
+// hooks
+import { useParentChildComponentResolver } from './hooks/useParentChildComponentResolver';
+
+defineOptions({
+  name: 'Table',
+});
 
 const props = withDefaults(
   defineProps<{
@@ -58,47 +73,54 @@ watch(
   },
   {
     immediate: true,
-  },
-);
-
-const innerColumnDefs: Ref<Array<ColumnDef>> = ref([...props.columnDefs]);
-const pinnedLeftColumnDefs = ref(
-  innerColumnDefs.value.filter((c) => c.pinned === 'left'),
-);
-const pinnedRightColumnDefs = ref(
-  innerColumnDefs.value.filter((c) => c.pinned === 'right'),
-);
-const notPinnedColumnDefs = ref(innerColumnDefs.value.filter((c) => !c.pinned));
-watch(
-  () => props.columnDefs,
-  (newVal) => {
-    innerColumnDefs.value = [...newVal];
-  },
-);
-watch(
-  () => innerColumnDefs.value,
-  (newVal) => {
-    pinnedLeftColumnDefs.value = newVal.filter((c) => c.pinned === 'left');
-    pinnedRightColumnDefs.value = newVal.filter((c) => c.pinned === 'right');
-    notPinnedColumnDefs.value = newVal.filter((c) => !c.pinned);
-  },
-  {
     deep: true,
   },
 );
 
-const innerGridOptions = defu(props.gridOptions, defaultGridOptions);
-
-provide<GridOptions>('gridOptions', innerGridOptions);
-provide<Array<ColumnDef>>('columnDefs', innerColumnDefs.value);
-provide<Array<RowData>>('rowData', innerRowData.value);
-provide<CellRendererComponents>(
-  'cellRendererComponents',
-  props.cellRendererComponents,
+const innerColumnDefs: ComputedRef<Array<ColumnDef>> = computed(
+  () => props.columnDefs,
 );
-provide<TooltipRendererComponents>(
+
+const pinnedLeftColumnDefs = computed(() =>
+  innerColumnDefs.value.filter((c) => c.pinned === 'left'),
+);
+const pinnedRightColumnDefs = computed(() =>
+  innerColumnDefs.value.filter((c) => c.pinned === 'right'),
+);
+const notPinnedColumnDefs = computed(() =>
+  innerColumnDefs.value.filter((c) => !c.pinned),
+);
+
+const innerGridOptions = computed(() => {
+  return defu(props.gridOptions, defaultGridOptions);
+});
+
+provide<ComputedRef<GridOptions>>('gridOptions', innerGridOptions);
+provide<ComputedRef<Array<ColumnDef>>>('columnDefs', innerColumnDefs);
+provide<Ref<Array<RowData>>>('rowData', innerRowData);
+
+const { getParentChildComponentRegistry } = useParentChildComponentResolver();
+provide<ComputedRef<CellRendererComponents>>(
+  'cellRendererComponents',
+  computed(() => {
+    const registry = getParentChildComponentRegistry();
+    const mergedComponents: CellRendererComponents = {
+      ...registry,
+      ...props.cellRendererComponents,
+    };
+    return mergedComponents;
+  }),
+);
+provide<ComputedRef<TooltipRendererComponents>>(
   'tooltipRendererComponents',
-  props.tooltipRendererComponents,
+  computed(() => {
+    const registry = getParentChildComponentRegistry();
+    const mergedComponents: TooltipRendererComponents = {
+      ...registry,
+      ...props.tooltipRendererComponents,
+    };
+    return mergedComponents;
+  }),
 );
 
 // 列固定
@@ -152,7 +174,7 @@ const sort = (column: ColumnDef) => {
       value: rowA[column.field],
       node: api.value.getRowNode(rowA._id)!,
       api: api.value,
-      context: innerGridOptions?.context,
+      context: innerGridOptions.value?.context,
     };
     const paramsRowB = {
       row: rowB,
@@ -160,7 +182,7 @@ const sort = (column: ColumnDef) => {
       value: rowB[column.field],
       node: api.value.getRowNode(rowB._id)!,
       api: api.value,
-      context: innerGridOptions?.context,
+      context: innerGridOptions.value?.context,
     };
     const valueA = column.valueGetter
       ? column.valueGetter(paramsRowA)
@@ -207,7 +229,7 @@ const sort = (column: ColumnDef) => {
     column,
     sortOrder: column.sortOrder,
     type: 'sortChanged',
-    context: innerGridOptions?.context,
+    context: innerGridOptions.value?.context,
   };
   emits('sortChanged', sortChangedEvent);
 };
@@ -259,37 +281,55 @@ const showTooltip = (e: Event, row: RowData, column: ColumnDef) => {
   tooltipCellRef.value.show({ event: e, row, column });
 };
 let pressTimer: number | null = null;
+let touchStartX = 0;
+let touchStartY = 0;
 
-const handleTouchStartCell = (e: Event, row: RowData, column: ColumnDef) => {
-  if (innerGridOptions.tooltipTriggerType !== 'longPress') return;
+const handleTouchStartCell = (
+  e: TouchEvent,
+  row: RowData,
+  column: ColumnDef,
+) => {
+  if (innerGridOptions.value.tooltipTriggerType !== 'longPress') return;
+  if (!e.touches[0]) return;
+  // 记录触摸开始位置和时间
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
   pressTimer = setTimeout(() => {
     showTooltip(e, row, column);
-  }, innerGridOptions.tooltipShowDelay || 200); // 最小长按事件为200ms
+  }, innerGridOptions.value.tooltipShowDelay || 200); // 最小长按事件为200ms
 };
-
+const handleTouchMoveCell = (e: TouchEvent) => {
+  if (!e.touches[0]) return;
+  const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
+  const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+  // 如果移动超过阈值，标记为移动
+  if (deltaX > 5 || deltaY > 5) {
+    clearTimeout(pressTimer as number);
+  }
+};
 const handleTouchEndCell = () => {
-  if (innerGridOptions.tooltipTriggerType !== 'longPress') return;
+  if (innerGridOptions.value.tooltipTriggerType !== 'longPress') return;
   clearTimeout(pressTimer as number);
 };
 
 const handleClickCell = (e: Event, row: RowData, column: ColumnDef) => {
   // tooltip
-  if (innerGridOptions.tooltipTriggerType === 'click') {
+  if (innerGridOptions.value.tooltipTriggerType === 'click') {
     const timer = setTimeout(() => {
       showTooltip(e, row, column);
       clearTimeout(timer);
-    }, innerGridOptions.tooltipShowDelay);
+    }, innerGridOptions.value.tooltipShowDelay);
   }
 };
 
 // 行高
 const getRowStyle = (row: RowData) => {
-  const rowHeight = innerGridOptions.rowHeight;
+  const rowHeight = innerGridOptions.value.rowHeight;
   const params = {
     row,
     node: api.value.getRowNode(row._id)!,
     api: api.value,
-    context: innerGridOptions?.context,
+    context: innerGridOptions.value?.context,
   };
   const height = isFunction(rowHeight) ? rowHeight(params) : rowHeight;
   return {
@@ -299,11 +339,11 @@ const getRowStyle = (row: RowData) => {
 
 // 表格边框
 const hasBorder = () => {
-  const border = innerGridOptions.border;
+  const border = innerGridOptions.value.border;
   if (isFunction(border)) {
     const params = {
       api: api.value,
-      context: innerGridOptions?.context,
+      context: innerGridOptions.value?.context,
     };
     // 设置css变量值
     const element = document.querySelector(
@@ -314,7 +354,7 @@ const hasBorder = () => {
   if (border) return true;
 };
 
-// 判断表格是否出现纵向滚动条
+// 判断表格是否出现纵向滚动条，如果有则给最后一列加上滚动条宽度
 const judgeOverflow = async () => {
   await nextTick();
   await nextTick();
@@ -338,14 +378,15 @@ provide<Ref<GridApi>>('api', api as Ref<GridApi>);
 onBeforeMount(() => {
   // 创建行管理器
   const rowManager = new RowManager(
-    innerGridOptions.getRowId,
-    innerGridOptions.rowSelection,
+    innerGridOptions.value.getRowId,
+    innerGridOptions.value.rowSelection,
   );
 
   // 创建API
   const gridApi = new GridApi(rowManager);
   api.value = gridApi;
   emits('gridReady', { api: gridApi, columnApi: null });
+  api.value.setData([...props.rowData]);
   nextTick(() => {
     gridReady.value = true;
   });
@@ -358,12 +399,10 @@ onMounted(() => {
 watch(
   () => props.rowData,
   (newVal) => {
-    nextTick(() => {
-      api.value?.setData([...newVal]);
-    });
+    api.value.setData([...newVal]);
   },
   {
-    immediate: true,
+    deep: true,
   },
 );
 </script>
@@ -445,9 +484,10 @@ watch(
                   :row="row"
                   :column="column"
                   @touchstart.passive="
-                    (e: Event) => handleTouchStartCell(e, row, column)
+                    (e: TouchEvent) => handleTouchStartCell(e, row, column)
                   "
-                  @touchend.passive="(e: Event) => handleTouchEndCell()"
+                  @touchmove.passive="(e: TouchEvent) => handleTouchMoveCell(e)"
+                  @touchend.passive="(e: TouchEvent) => handleTouchEndCell()"
                   @contextmenu.prevent
                   @click="(e: Event) => handleClickCell(e, row, column)"
                   @selection-changed="selectionChanged"
@@ -472,9 +512,10 @@ watch(
                   :row="row"
                   :column="column"
                   @touchstart.passive="
-                    (e: Event) => handleTouchStartCell(e, row, column)
+                    (e: TouchEvent) => handleTouchStartCell(e, row, column)
                   "
-                  @touchend.passive="(e: Event) => handleTouchEndCell()"
+                  @touchmove.passive="(e: TouchEvent) => handleTouchMoveCell(e)"
+                  @touchend.passive="(e: TouchEvent) => handleTouchEndCell()"
                   @contextmenu.prevent
                   @click="(e: Event) => handleClickCell(e, row, column)"
                   @selection-changed="selectionChanged"
@@ -496,9 +537,10 @@ watch(
                   :row="row"
                   :column="column"
                   @touchstart.passive="
-                    (e: Event) => handleTouchStartCell(e, row, column)
+                    (e: TouchEvent) => handleTouchStartCell(e, row, column)
                   "
-                  @touchend.passive="(e: Event) => handleTouchEndCell()"
+                  @touchmove.passive="(e: TouchEvent) => handleTouchMoveCell(e)"
+                  @touchend.passive="(e: TouchEvent) => handleTouchEndCell()"
                   @contextmenu.prevent
                   @click="(e: Event) => handleClickCell(e, row, column)"
                   @selection-changed="selectionChanged"

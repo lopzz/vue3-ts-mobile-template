@@ -16,6 +16,7 @@ const active = ref(0);
     :theme-vars="themeVars"
     :theme-vars-dark="themeVarsDark"
     :theme-vars-light="themeVarsLight"
+    class="provider-container"
   >
     <RouterView />
     <!-- 开启底部安全区适配 -->
@@ -34,6 +35,10 @@ const active = ref(0);
 </template>
 
 <style lang="less">
+.provider-container {
+  height: 100%;
+}
+
 .aa {
   width: 375px;
   height: 80vw;
