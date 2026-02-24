@@ -23,7 +23,6 @@ const getCommonClass = ({
   isHeader: boolean;
 }) => ({
   [`align-${column.align}-${isHeader ? 'header' : 'cell'}`]: !!column.align,
-  'text-ellipsis': column?.ellipsis !== false,
 });
 
 export { getWidth, getCommonClass };

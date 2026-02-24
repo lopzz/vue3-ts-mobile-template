@@ -68,6 +68,7 @@ const getCellClass = (row: RowData, column: ColumnDef) => {
     context: gridOptions.value?.context,
   };
   return {
+    'text-ellipsis': column?.ellipsis !== false,
     ...getCommonClass({ column, isHeader: false }),
     ...((isFunction(column?.cellClass)
       ? column?.cellClass?.(params)

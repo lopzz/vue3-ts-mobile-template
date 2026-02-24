@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { inject, computed } from 'vue';
+import { inject, computed, ref } from 'vue';
 import type { Ref, ComputedRef } from 'vue';
 import Checkbox from '../Checkbox/Checkbox.vue';
 
@@ -39,6 +39,13 @@ const gridOptions: ComputedRef<GridOptions> = inject(
 const api = inject('api') as Ref<GridApi>;
 
 const getHeaderStyle = (column: ColumnDef) => {
+  if (!column.width && headerCellRef.value) {
+    headerCellRef.value.classList.remove('text-ellipsis');
+    column.width = headerCellRef.value.clientWidth;
+    if (column?.ellipsis !== false) {
+      headerCellRef.value.classList.add('text-ellipsis');
+    }
+  }
   const params = {
     column,
     api: api.value,
@@ -97,13 +104,15 @@ const toggleSelection = (e: Event) => {
   };
   emits('selectionChanged', selectionChangedEvent);
 };
+const headerCellRef = ref();
 </script>
 
 <template>
   <div
+    ref="headerCellRef"
     class="header-cell table-cell"
-    :class="getHeaderClass(column)"
     :style="getHeaderStyle(column)"
+    :class="getHeaderClass(column)"
     @click="handleHeaderClick(column)"
   >
     <template v-if="column.headerCheckboxSelection">
@@ -113,7 +122,13 @@ const toggleSelection = (e: Event) => {
         :indeterminate="api.isIndeterminateSelected()"
       />
     </template>
-    <div v-else>{{ getHeaderValue(column) }}</div>
+    <div
+      v-else
+      class="label"
+      :class="{ 'text-ellipsis': column?.ellipsis !== false }"
+    >
+      {{ getHeaderValue(column) }}
+    </div>
     <div v-if="column.sortable" class="sort-container">
       <div
         class="sort-icon-none"

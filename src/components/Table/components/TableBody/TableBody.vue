@@ -111,11 +111,21 @@ const checkNeedBottomBorder = async () => {
   await nextTick();
   if (!colsRef.value || !tableContentRef.value) return;
   if (colsRef.value?.clientHeight !== tableContentRef.value?.clientHeight) {
-    const tableRows = colsRef.value.querySelectorAll('.table-row');
-    const lastRow = tableRows[tableRows.length - 1] as HTMLElement;
-    if (lastRow) {
-      lastRow.style.borderBottom = 'var(--border)';
-    }
+    const domClass = [
+      '.pinned-left-cols-container',
+      '.cols-container',
+      '.pinned-right-cols-container',
+    ];
+    domClass.forEach((className) => {
+      const tableRows = colsRef.value?.querySelectorAll(
+        `${className} .table-row`,
+      ) as unknown as HTMLElement[];
+      // const tableRows = dom.querySelectorAll('.table-row');
+      const lastRow = tableRows[tableRows.length - 1] as HTMLElement;
+      if (lastRow) {
+        lastRow.style.borderBottom = 'var(--border)';
+      }
+    });
   }
 };
 

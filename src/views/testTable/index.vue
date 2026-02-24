@@ -25,7 +25,7 @@ const data = [
     b: 2,
     c: 3,
     d: 3,
-    e: 3,
+    e: 'asd',
     f: 4,
     g: 5,
     h: 4,
@@ -70,7 +70,7 @@ const columnDefs = ref<ColumnDef[]>([
   {
     field: 'a',
     headerName: '第一列',
-    width: '100px',
+    width: '60px',
     sortable: true,
     comparator: ({ valueA, valueB, column }) => {
       const numValueA = Number(valueA);
@@ -210,8 +210,6 @@ const changeRowData = () => {
 }
 
 .table {
-  // todo 最底下边框重叠问题
-
   flex: 1;
   min-height: 0;
   max-height: 500px;
