@@ -1,0 +1,28 @@
+/* 滚动条整体样式 */
+::-webkit-scrollbar {
+  width: 8px; /* 垂直滚动条宽度 */
+  height: 8px; /* 水平滚动条高度 */
+}
+
+/* 滚动条轨道（背景） */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* 浅灰色背景 */
+  border-radius: 4px;
+}
+
+/* 滚动条滑块（可拖动部分） */
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1; /* 中灰色滑块 */
+  border-radius: 4px;
+  transition: background 0.3s ease; /* 平滑的颜色过渡 */
+}
+
+/* 鼠标悬停时滑块变深 */
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 隐藏滚动条两端的按钮（箭头） */
+::-webkit-scrollbar-button {
+  display: none;
+}

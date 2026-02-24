@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="8px" height="12px" viewBox="0 0 8 12" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon/清空输入内容备份 3</title>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="icon/清空输入内容备份-3" transform="translate(0.222222, 0.000000)">
+            <polygon id="上" fill="#005096" transform="translate(3.777778, 2.500000) rotate(-180.000000) translate(-3.777778, -2.500000) " points="1.19907171e-13 0 7.55555556 0 3.77777778 5"></polygon>
+            <polygon id="下" fill-opacity="0.3" fill="#000E1A" transform="translate(3.777778, 9.500000) rotate(-360.000000) translate(-3.777778, -9.500000) " points="1.65250529e-13 7 7.55555556 7 3.77777778 12"></polygon>
+        </g>
+    </g>
+</svg>

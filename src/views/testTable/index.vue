@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+// import Table from '@/components/Table copy/index.vue';
 import Table from '@/components/Table/index.vue';
 import TestCellRenderer from './components/TestCellRenderer.vue';
 import TestTooltipRenderer from './components/TestTooltipRenderer.vue';
@@ -30,20 +31,20 @@ const data = [
     h: 4,
     i: 5,
   },
-  // {
-  //   a: 4,
-  //   b: 5,
-  //   c: 6,
-  //   d: 3,
-  //   e: 3,
-  //   f: 4,
-  //   g: 5,
-  //   h: 4,
-  //   i: 5,
-  // },
+  {
+    a: 4,
+    b: 5,
+    c: 6,
+    d: 3,
+    e: 3,
+    f: 4,
+    g: 5,
+    h: 4,
+    i: 5,
+  },
 ];
 const rowData = ref(
-  Array.from({ length: 1 }, () => [
+  Array.from({ length: 2 }, () => [
     ...data.map((item) => ({ ...item })),
   ]).flat(),
 );
@@ -94,7 +95,7 @@ const columnDefs = ref<ColumnDef[]>([
     headerName: '第二列',
     width: '100px',
     ellipsis: false,
-    cellRenderer: 'TestCellRenderer',
+    // cellRenderer: 'TestCellRenderer',
   },
   {
     field: 'c',
@@ -131,7 +132,7 @@ const columnDefs = ref<ColumnDef[]>([
     field: 'h',
     headerName: '第8列',
     width: '100px',
-    pinned: 'right',
+    // pinned: 'right',
   },
   {
     field: 'i',
@@ -150,7 +151,7 @@ const gridOptions = ref<GridOptions>({
   //   // console.warn('rowHeight params', params);
   //   return params.node.rowIndex % 2 === 0 ? 60 : 40;
   // },
-  border: false,
+  // border: true,
   // border: (params) => {
   //   // console.warn(55555555, params);
   //   return '2px solid purple';
@@ -209,6 +210,8 @@ const changeRowData = () => {
 }
 
 .table {
+  // todo 最底下边框重叠问题
+
   flex: 1;
   min-height: 0;
   max-height: 500px;

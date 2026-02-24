@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <script lang="ts" setup>
 import { inject, watch, ref } from 'vue';
-import type { Ref, ComputedRef } from 'vue';
+import type { Ref, ComponentPublicInstance, ComputedRef } from 'vue';
 
 import type {
   ColumnDef,
@@ -18,12 +18,12 @@ const props = withDefaults(
   defineProps<{
     row: RowData;
     column: ColumnDef;
-    contentElementRef: HTMLElement;
+    contentElementRef: ComponentPublicInstance;
   }>(),
   {
     row: () => ({}) as RowData,
     column: () => ({}) as ColumnDef,
-    contentElementRef: () => null as unknown as HTMLElement,
+    contentElementRef: () => null as unknown as ComponentPublicInstance,
   },
 );
 
@@ -140,7 +140,7 @@ watch(
   ([newContentElementRef, newTooltipCellRef]) => {
     if (newContentElementRef && newTooltipCellRef) {
       tooltipInstance = new Tooltip({
-        contentElement: newContentElementRef,
+        contentElement: newContentElementRef.$el,
         tooltipElement: newTooltipCellRef,
       });
     }
@@ -192,10 +192,7 @@ defineExpose({
 
   .custom-tooltip-inner {
     width: 96px;
-    min-height: 32px;
-    padding: 8px;
-    color: @tooltip-text-color;
-    word-break: break-all;
+    height: 60px;
     background: @tooltip-bg-color;
     border-radius: 4px;
   }
