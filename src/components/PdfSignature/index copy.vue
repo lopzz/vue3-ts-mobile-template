@@ -1,6 +1,6 @@
 <!-- 主组件 -->
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 // 导入 PDF.js
 import * as pdfjsLib from 'pdfjs-dist';
 // 导入 worker
@@ -16,12 +16,6 @@ import {
 // 导入签名弹窗组件
 import SignatureDialog from './components/SignatureDialog.vue';
 
-import { defu } from 'defu';
-import {
-  defaultSignatureConfig,
-  defaultDateConfig,
-} from './config/defaultConfig';
-
 import type {
   SignatureConfig,
   DateConfig,
@@ -35,39 +29,37 @@ import type {
 // 组件属性
 const props = withDefaults(
   defineProps<{
-    // 新增：文件流属性
-    pdfFile?: File | ArrayBuffer | Uint8Array | Blob | null;
-    // 新增：文件URL属性
-    pdfUrl?: string | null;
-    // 新增：是否显示上传区域
-    showUpload?: boolean;
     signatureConfig?: SignatureConfig;
     dateConfig?: DateConfig;
   }>(),
   {
-    pdfFile: null,
-    pdfUrl: null,
-    showUpload: false,
-    signatureConfig: () => ({}) as SignatureConfig,
-    dateConfig: () => ({}) as DateConfig,
+    signatureConfig: () =>
+      ({
+        page: 1, // 签在第几页
+        x: 150, // 起始x坐标,相对于PDF页面原始尺寸的坐标，pdf页面原点为左下角，canvas坐标系原点为左上角
+        y: 200, // 起始y坐标,相对于 PDF 页面原始尺寸的尺寸单位
+        maxWidth: 200, // 签名区域最大宽度,相对于 PDF 页面原始尺寸的尺寸单位
+        maxHeight: 100, // 签名区域最大高度,相对于 PDF 页面原始尺寸的尺寸单位
+        spacing: 20, // 签名之间的间距,相对于 PDF 页面原始尺寸的尺寸单位
+      }) as SignatureConfig,
+    dateConfig: () =>
+      ({
+        page: 1, // 日期在第几页
+        x: 150, // 日期x坐标
+        y: 150, // 日期y坐标
+        fontSize: 16, // 字体大小
+        color: { r: 0, g: 0, b: 0 }, // 字体颜色
+        text: '', // 日期文本，为空则使用当前日期
+      }) as DateConfig,
   },
 );
 
 // 设置 worker 路径
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-const innerSignatureConfig = computed(() => {
-  return defu(props.signatureConfig, defaultSignatureConfig);
-});
-const innerDateConfig = computed(() => {
-  return defu(props.dateConfig, defaultDateConfig);
-});
-
 // 响应式数据
 const fileList = ref<UploadFile[]>([]);
-const internalPdfFile = ref<File | null>(null);
-const originalPdfData = ref<ArrayBuffer | null>(null);
-const isPDFLoaded = ref(false);
+const pdfFile = ref<File | null>(null);
 let pdfData: pdfjsLib.PDFDocumentProxy | null = null;
 const totalPages = ref(0);
 const currentPage = ref(1);
@@ -81,6 +73,7 @@ const isGeneratingPDF = ref(false);
 const isSavingImage = ref(false);
 
 // 弹窗控制
+const showSignatureDialog = ref(false);
 const signatureDialogRef = ref<InstanceType<typeof SignatureDialog> | null>(
   null,
 );
@@ -102,39 +95,8 @@ const getDevicePixelRatio = (): number => {
   return window.devicePixelRatio || 1;
 };
 
-// 转换为ArrayBuffer
-const toArrayBuffer = async (
-  input: File | ArrayBuffer | Uint8Array | Blob,
-): Promise<ArrayBuffer> => {
-  if (input instanceof ArrayBuffer) {
-    return input;
-  } else if (input instanceof Uint8Array) {
-    // 创建新的 ArrayBuffer 并复制数据
-    const buffer = new ArrayBuffer(input.length);
-    new Uint8Array(buffer).set(input);
-    return buffer;
-  } else if (input instanceof File || input instanceof Blob) {
-    return await input.arrayBuffer();
-  } else {
-    throw new Error('不支持的文件类型');
-  }
-};
-
-// 添加深拷贝 ArrayBuffer 的工具函数
-const cloneArrayBuffer = (buffer: ArrayBuffer): ArrayBuffer => {
-  if (buffer.byteLength === 0) {
-    return new ArrayBuffer(0);
-  }
-
-  const cloned = new ArrayBuffer(buffer.byteLength);
-  new Uint8Array(cloned).set(new Uint8Array(buffer));
-  return cloned;
-};
-
-// 加载PDF（支持多种输入）
-const loadPDFFromSource = async (
-  source: File | ArrayBuffer | Uint8Array | Blob | string,
-): Promise<void> => {
+// 上传文件处理
+const handleFileUpload = async (file: UploadFile): Promise<void> => {
   try {
     showLoadingToast({
       message: '加载PDF中...',
@@ -142,21 +104,23 @@ const loadPDFFromSource = async (
       duration: 0,
     });
 
-    let arrayBuffer: ArrayBuffer;
+    pdfFile.value = file.file;
+    fileList.value = [{ file: file.file, status: 'done' }];
 
-    if (typeof source === 'string') {
-      // 从URL加载
-      const response = await fetch(source);
-      if (!response.ok) {
-        throw new Error(`加载失败: ${response.status} ${response.statusText}`);
-      }
-      arrayBuffer = await response.arrayBuffer();
-    } else {
-      // 从文件流或File对象加载
-      arrayBuffer = await toArrayBuffer(source);
-    }
-    // 深拷贝保存
-    originalPdfData.value = cloneArrayBuffer(arrayBuffer);
+    await loadPDF(file.file);
+
+    closeToast();
+    showToast('PDF加载成功');
+  } catch (error) {
+    console.error('PDF加载失败:', error);
+    showToast(`PDF加载失败: ${(error as Error).message}`);
+  }
+};
+
+// 加载PDF
+const loadPDF = async (file: File): Promise<void> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
 
     if (pdfData) {
       try {
@@ -183,29 +147,13 @@ const loadPDFFromSource = async (
 
     pdfData = await loadingTask.promise;
     totalPages.value = pdfData.numPages;
-    isPDFLoaded.value = true;
 
     await nextTick();
 
     await renderPage(1);
-    closeToast();
-    showToast('PDF加载成功');
   } catch (error) {
     console.error('PDF加载错误:', error);
-    showToast(`PDF加载失败: ${(error as Error).message}`);
-    throw error;
-  }
-};
-
-// 上传文件处理
-const handleFileUpload = async (file: UploadFile): Promise<void> => {
-  try {
-    internalPdfFile.value = file.file;
-    fileList.value = [{ file: file.file, status: 'done' }];
-
-    await loadPDFFromSource(file.file);
-  } catch (error) {
-    console.error('PDF加载失败:', error);
+    throw new Error(`PDF加载失败: ${(error as Error).message}`);
   }
 };
 
@@ -236,7 +184,6 @@ const renderPage = async (pageNum: number): Promise<void> => {
     if (canvasContainer.value && canvasContainer.value.clientWidth > 0) {
       const containerWidth = canvasContainer.value.clientWidth - 40;
       const defaultViewport = page.getViewport({ scale: 1.0 });
-      // console.log('页面视口信息:', defaultViewport);
       const calculatedScale = containerWidth / defaultViewport.width;
       targetScale = Math.min(calculatedScale, 2.0);
       targetScale = Math.max(targetScale, 0.5);
@@ -245,6 +192,8 @@ const renderPage = async (pageNum: number): Promise<void> => {
     }
 
     const viewport = page.getViewport({ scale: targetScale });
+
+    // 现在 TypeScript 知道 canvasElement 不为 null
     canvasElement.width = Math.floor(viewport.width * dpr);
     canvasElement.height = Math.floor(viewport.height * dpr);
     canvasElement.style.width = `${viewport.width}px`;
@@ -281,7 +230,7 @@ const renderPage = async (pageNum: number): Promise<void> => {
       dpr,
     };
 
-    if (pageNum === innerSignatureConfig.value.page) {
+    if (pageNum === props.signatureConfig.page) {
       renderAppliedSignatures();
       renderAppliedDates();
     }
@@ -307,7 +256,7 @@ const renderAppliedSignatures = (): void => {
     return;
   }
 
-  const config = innerSignatureConfig.value;
+  const config = props.signatureConfig;
   const viewport = pageViewports.value[currentPage.value];
 
   if (!viewport) {
@@ -322,18 +271,6 @@ const renderAppliedSignatures = (): void => {
   const canvasY = config.y * scaleY;
   const canvasWidth = config.maxWidth * scaleX;
   const canvasHeight = config.maxHeight * scaleY;
-
-  // console.log('签名框转换信息:', {
-  //   pdf原始坐标: {
-  //     x: config.x,
-  //     y: config.y,
-  //     width: config.maxWidth,
-  //     height: config.maxHeight,
-  //   },
-  //   画布坐标: { canvasX, canvasY, canvasWidth, canvasHeight },
-  //   缩放比例: { scaleX, scaleY },
-  //   视口信息: viewport,
-  // });
 
   ctx.save();
   ctx.fillStyle = '#FFFFFF';
@@ -504,10 +441,6 @@ const goToPage = (pageNum: number): void => {
 
 // 打开签名弹窗
 const openSignatureDialog = (): void => {
-  if (!pdfData) {
-    showToast('请先加载PDF文件');
-    return;
-  }
   signatureDialogRef.value?.init();
 };
 
@@ -557,26 +490,7 @@ const clearAllSignatures = async (): Promise<void> => {
   }
 };
 
-// 获取当前PDF文件
-const getCurrentPDFFile = ():
-  | File
-  | ArrayBuffer
-  | Uint8Array
-  | Blob
-  | string
-  | null => {
-  if (internalPdfFile.value) {
-    return internalPdfFile.value;
-  } else if (props.pdfFile) {
-    return props.pdfFile;
-  } else if (props.pdfUrl) {
-    return props.pdfUrl;
-  }
-  return null;
-};
-
 // 保存签名图片
-// eslint-disable-next-line unused-imports/no-unused-vars, no-unused-vars
 const saveSignedImage = (): void => {
   try {
     isSavingImage.value = true;
@@ -630,25 +544,20 @@ const generateSignedPDF = async (): Promise<void> => {
       forbidClick: true,
     });
 
-    const pdfSource = getCurrentPDFFile();
-    if (!pdfSource) {
-      throw new Error('请先加载PDF文件');
+    if (!pdfFile.value) {
+      throw new Error('请先上传PDF文件');
     }
-    // if (
-    //   appliedSignatureData.value.length === 0 &&
-    //   appliedDates.value.length === 0
-    // ) {
-    //   throw new Error('请先添加签名或日期');
-    // }
+    if (
+      appliedSignatureData.value.length === 0 &&
+      appliedDates.value.length === 0
+    ) {
+      throw new Error('请先添加签名或日期');
+    }
 
-    // 使用保存的数据副本
-    const arrayBuffer = originalPdfData.value;
-    if (!arrayBuffer) {
-      throw new Error('原始PDF数据不可用');
-    }
+    const arrayBuffer = await pdfFile.value.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const pages = pdfDoc.getPages();
-    const config = innerSignatureConfig.value;
+    const config = props.signatureConfig;
 
     if (config.page < 1 || config.page > pages.length) {
       throw new Error(`签名页 ${config.page} 超出PDF页数范围`);
@@ -793,6 +702,7 @@ const generateSignedPDF = async (): Promise<void> => {
     }
 
     const pdfBytes = await pdfDoc.save();
+    // const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const blob = new Blob([pdfBytes] as [BlobPart], {
       type: 'application/pdf',
     });
@@ -800,7 +710,7 @@ const generateSignedPDF = async (): Promise<void> => {
 
     const link = document.createElement('a');
     link.href = url;
-    link.download = `已签名_${internalPdfFile.value?.name || 'document'}.pdf`;
+    link.download = `已签名_${pdfFile.value.name || 'document'}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -825,36 +735,6 @@ watch(currentPage, (newPage) => {
     renderPage(newPage);
   }
 });
-
-// 监听外部传入的PDF文件变化
-watch(
-  () => props.pdfFile,
-  async (newFile) => {
-    if (newFile) {
-      try {
-        await loadPDFFromSource(newFile);
-      } catch (error) {
-        console.error('加载外部PDF文件失败:', error);
-      }
-    }
-  },
-  { immediate: true },
-);
-
-// 监听外部传入的PDF URL变化
-watch(
-  () => props.pdfUrl,
-  async (newUrl) => {
-    if (newUrl) {
-      try {
-        await loadPDFFromSource(newUrl);
-      } catch (error) {
-        console.error('加载外部PDF URL失败:', error);
-      }
-    }
-  },
-  { immediate: true },
-);
 
 // 组件挂载
 onMounted(() => {
@@ -976,13 +856,13 @@ const renderAppliedDates = (): void => {
 
 // 添加日期
 const addDate = async (): Promise<void> => {
-  if (!pdfData) {
-    showToast('请先加载PDF文件');
+  if (!pdfFile.value) {
+    showToast('请先上传PDF文件');
     return;
   }
 
   try {
-    const config = innerDateConfig.value;
+    const config = props.dateConfig;
     const dateText = config.text || getFormattedDate();
 
     appliedDates.value.push({
@@ -1006,8 +886,8 @@ const addDate = async (): Promise<void> => {
 
 <template>
   <div class="pdf-sign-container">
-    <!-- 文件上传区域（可控制是否显示） -->
-    <div v-if="showUpload" class="upload-section">
+    <!-- 文件上传区域 -->
+    <div class="upload-section">
       <van-uploader
         v-model="fileList"
         :after-read="handleFileUpload"
@@ -1023,7 +903,7 @@ const addDate = async (): Promise<void> => {
     </div>
 
     <!-- PDF预览区域 -->
-    <div v-if="isPDFLoaded && totalPages > 0" class="preview-section">
+    <div v-if="pdfFile && totalPages > 0" class="preview-section">
       <div class="section-header">
         <h3>PDF预览</h3>
         <div class="page-controls">
@@ -1065,36 +945,36 @@ const addDate = async (): Promise<void> => {
         </div>
       </div>
     </div>
-    <van-empty v-else description="暂无文件" />
 
     <!-- 操作按钮区域 -->
-    <div v-if="pdfData && totalPages > 0" class="action-section">
+    <div v-if="pdfFile && totalPages > 0" class="action-section">
       <div class="main-actions">
         <van-button
           type="primary"
           @click="openSignatureDialog"
+          block
           class="action-btn"
         >
           <van-icon name="edit" />
           打开签名工具
         </van-button>
-        <van-button type="primary" @click="addDate" class="action-btn">
-          <van-icon name="notes-o" />添加日期
-        </van-button>
-        <!-- <van-button
+        <van-button type="success" @click="addDate"> 添加日期 </van-button>
+        <van-button
           type="success"
           @click="saveSignedImage"
           :loading="isSavingImage"
+          block
           class="action-btn"
         >
           <van-icon name="photo" />
           保存签名图片
-        </van-button> -->
+        </van-button>
 
         <van-button
           type="success"
           @click="generateSignedPDF"
           :loading="isGeneratingPDF"
+          block
           class="action-btn"
         >
           <van-icon name="down" />
@@ -1104,6 +984,7 @@ const addDate = async (): Promise<void> => {
         <van-button
           type="warning"
           @click="clearAllSignatures"
+          block
           class="action-btn"
         >
           <van-icon name="delete" />
@@ -1115,7 +996,8 @@ const addDate = async (): Promise<void> => {
     <!-- 签名弹窗组件 -->
     <SignatureDialog
       ref="signatureDialogRef"
-      :signature-config="innerSignatureConfig"
+      v-model:show-dialog="showSignatureDialog"
+      :signature-config="signatureConfig"
       @apply-signatures="handleApplySignatures"
     />
   </div>
@@ -1124,14 +1006,15 @@ const addDate = async (): Promise<void> => {
 <style scoped>
 .pdf-sign-container {
   max-width: 1000px;
-  padding: 8px;
+  padding: 20px;
   margin: 0 auto;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .upload-section {
-  margin-bottom: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
   text-align: center;
   background: #f7f8fa;
   border-radius: 12px;
@@ -1144,6 +1027,7 @@ const addDate = async (): Promise<void> => {
 }
 
 .preview-section {
+  padding: 16px;
   margin-bottom: 20px;
   background: white;
   border-radius: 12px;
@@ -1154,7 +1038,8 @@ const addDate = async (): Promise<void> => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
   border-bottom: 1px solid #ebedf0;
 }
 
@@ -1185,7 +1070,7 @@ const addDate = async (): Promise<void> => {
   justify-content: center;
   min-height: 400px;
   max-height: 70vh;
-  padding: 12px;
+  padding: 20px;
   overflow: auto;
   background: #f5f5f5;
   border-radius: 8px;
@@ -1211,6 +1096,7 @@ const addDate = async (): Promise<void> => {
   display: flex;
   gap: 8px;
   padding: 12px;
+  margin-top: 16px;
   overflow-x: auto;
   background: #f7f8fa;
   border-radius: 8px;
@@ -1247,7 +1133,8 @@ const addDate = async (): Promise<void> => {
 }
 
 .action-section {
-  padding: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgb(0 0 0 / 10%);
@@ -1255,19 +1142,15 @@ const addDate = async (): Promise<void> => {
 
 .main-actions {
   display: flex;
-  flex-wrap: wrap;
-
-  /* flex-direction: column; */
+  flex-direction: column;
   gap: 12px;
 }
 
 .action-btn {
-  flex: 0 0 calc(50% - 6px);
-
-  /* height: 44px;
+  height: 44px;
   font-size: 14px;
   font-weight: 500;
-  border-radius: 8px; */
+  border-radius: 8px;
 }
 
 .action-btn .van-icon {

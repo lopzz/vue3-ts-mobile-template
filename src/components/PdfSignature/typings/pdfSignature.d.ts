@@ -7,15 +7,25 @@ interface Color {
 }
 
 interface SignatureConfig {
-  page: number;
-  x: number;
-  y: number;
-  maxWidth: number;
-  maxHeight: number;
-  spacing: number;
+  page?: number;
+  x?: number;
+  y?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  spacing?: number;
 }
 
 interface DateConfig {
+  page?: number;
+  x?: number;
+  y?: number;
+  fontSize?: number;
+  color?: Color;
+  text?: string;
+  opacity?: number;
+}
+
+interface RequiredDateConfig {
   page: number;
   x: number;
   y: number;
@@ -45,7 +55,7 @@ interface AppliedDate {
   x: number;
   y: number;
   text: string;
-  config: DateConfig;
+  config: RequiredDateConfig;
   timestamp: number;
 }
 interface AppliedSignaturePosition {

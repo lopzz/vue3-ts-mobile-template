@@ -18,6 +18,11 @@ const router = createRouter({
       component: () => import('../views/testTable/index.vue'),
     },
     {
+      path: '/pdfSignature',
+      name: 'pdfSignature',
+      component: () => import('../views/pdfSignature/index.vue'),
+    },
+    {
       path: '/todo',
       name: 'todo',
       component: () => import('../views/todo/index.vue'),

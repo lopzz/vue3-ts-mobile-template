@@ -2,6 +2,7 @@
 import { ref, nextTick, computed } from 'vue';
 import { showToast, showLoadingToast, closeToast } from 'vant';
 import type {
+  RequiredSignatureConfig,
   Point,
   Stroke,
   StrokeHistoryItem,
@@ -13,18 +14,9 @@ import type {
   AppliedSignature,
 } from '../typings/signatureDialog.d.ts';
 
-interface SignatureConfig {
-  page: number;
-  x: number;
-  y: number;
-  maxWidth: number;
-  maxHeight: number;
-  spacing: number;
-}
-
 // 组件属性
 const props = defineProps<{
-  signatureConfig: SignatureConfig;
+  signatureConfig: RequiredSignatureConfig;
 }>();
 
 const emit = defineEmits<{
@@ -141,6 +133,7 @@ const clearCanvas = (): void => {
 };
 
 // 获取当前签名尺寸
+// eslint-disable-next-line unused-imports/no-unused-vars, no-unused-vars
 const getCurrentSignatureSize = (): string => {
   if (currentStrokes.value.length === 0) {
     return '0×0';
@@ -746,7 +739,7 @@ const removeSignature = (index: number): void => {
 // 尝试使用指定缩放比例进行布局
 const tryLayoutWithScale = (
   signatures: Signature[],
-  config: SignatureConfig,
+  config: RequiredSignatureConfig,
   scale: number,
   positions: Position[],
 ): boolean => {
@@ -1007,14 +1000,14 @@ defineExpose({
           </van-button>
         </div>
 
-        <div class="signature-info">
+        <!-- <div class="signature-info">
           <p>
             笔画数: {{ currentStrokes.length }} | 点数: {{ getTotalPoints() }}
           </p>
           <p v-if="currentStrokes.length > 0">
             签名尺寸: {{ getCurrentSignatureSize() }}
           </p>
-        </div>
+        </div> -->
       </div>
 
       <!-- 已保存的签名列表 -->
@@ -1072,7 +1065,7 @@ defineExpose({
       </div>
 
       <!-- 签名区域信息 -->
-      <div class="signature-area-info">
+      <!-- <div class="signature-area-info">
         <h4>签名区域信息</h4>
         <div class="area-stats">
           <div class="stat-item">
@@ -1091,16 +1084,15 @@ defineExpose({
             <span class="stat-value">整体等比缩小</span>
           </div>
         </div>
-      </div>
+      </div> -->
     </div>
   </van-dialog>
 </template>
 
-<style scoped>
-/* 样式保持不变 */
+<style scoped lang="less">
 .signature-dialog {
-  max-height: 80vh;
-  padding: 20px;
+  max-height: 70vh;
+  padding: 12px;
   overflow-y: auto;
 }
 
@@ -1112,8 +1104,7 @@ defineExpose({
 }
 
 .signature-create-area {
-  padding-bottom: 20px;
-  margin-bottom: 24px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #ebedf0;
 }
 
@@ -1175,7 +1166,7 @@ defineExpose({
 }
 
 .saved-signatures-section {
-  margin-top: 20px;
+  /* margin-top: 20px; */
 }
 
 .saved-signatures-list {

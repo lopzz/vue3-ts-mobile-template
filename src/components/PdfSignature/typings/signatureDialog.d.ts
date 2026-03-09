@@ -1,4 +1,7 @@
+import type { SignatureConfig } from './pdfSignature';
 // 类型定义
+type RequiredSignatureConfig = Required<SignatureConfig>;
+
 interface Point {
   x: number;
   y: number;
@@ -63,6 +66,7 @@ interface AppliedSignature {
 }
 
 export {
+  RequiredSignatureConfig,
   Point,
   Stroke,
   StrokeHistoryItem,
