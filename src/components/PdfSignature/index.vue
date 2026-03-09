@@ -1121,156 +1121,149 @@ const addDate = async (): Promise<void> => {
   </div>
 </template>
 
-<style scoped>
+<style lang="less" scoped>
 .pdf-sign-container {
   max-width: 1000px;
   padding: 8px;
   margin: 0 auto;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
 
-.upload-section {
-  margin-bottom: 12px;
-  text-align: center;
-  background: #f7f8fa;
-  border-radius: 12px;
-}
+  .upload-section {
+    margin-bottom: 12px;
+    text-align: center;
+    background: #f7f8fa;
+    border-radius: 12px;
+  }
 
-.upload-tips {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #969799;
-}
+  .upload-tips {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #969799;
+  }
 
-.preview-section {
-  margin-bottom: 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgb(0 0 0 / 10%);
-}
+  .preview-section {
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 10%);
 
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  border-bottom: 1px solid #ebedf0;
-}
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #ebedf0;
 
-.section-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #323233;
-}
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #323233;
+      }
 
-.page-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
+      .page-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
 
-.page-info {
-  min-width: 100px;
-  font-size: 14px;
-  color: #646566;
-  text-align: center;
-}
+        .page-info {
+          min-width: 100px;
+          font-size: 14px;
+          color: #646566;
+          text-align: center;
+        }
+      }
+    }
 
-.pdf-display-area {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  max-height: 70vh;
-  padding: 12px;
-  overflow: auto;
-  background: #f5f5f5;
-  border-radius: 8px;
-}
+    .pdf-display-area {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      max-height: 70vh;
+      padding: 12px;
+      overflow: auto;
+      background: #f5f5f5;
+      border-radius: 8px;
 
-.canvas-container {
-  position: relative;
-  display: inline-block;
-  max-width: 100%;
-  margin: 0 auto;
-  background: white;
-  box-shadow: 0 4px 20px rgb(0 0 0 / 15%);
-}
+      .canvas-container {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 4px 20px rgb(0 0 0 / 15%);
 
-.pdf-canvas {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  background: white;
-}
+        .pdf-canvas {
+          display: block;
+          max-width: 100%;
+          height: auto;
+          background: white;
+        }
+      }
+    }
 
-.page-thumbnails {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  overflow-x: auto;
-  background: #f7f8fa;
-  border-radius: 8px;
-}
+    .page-thumbnails {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      background: #f7f8fa;
+      border-radius: 8px;
 
-.thumbnail-item {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 50px;
-  cursor: pointer;
-  background: white;
-  border: 2px solid #dcdee0;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
+      .thumbnail-item {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 50px;
+        cursor: pointer;
+        background: white;
+        border: 2px solid #dcdee0;
+        border-radius: 4px;
+        transition: all 0.3s ease;
 
-.thumbnail-item:hover {
-  border-color: #1989fa;
-  transform: translateY(-2px);
-}
+        &:hover {
+          border-color: #1989fa;
+          transform: translateY(-2px);
+        }
 
-.thumbnail-item.thumbnail-active {
-  background: #e8f4ff;
-  border-color: #1989fa;
-}
+        &.thumbnail-active {
+          background: #e8f4ff;
+          border-color: #1989fa;
+        }
 
-.thumbnail-number {
-  font-size: 12px;
-  font-weight: 500;
-  color: #646566;
-}
+        .thumbnail-number {
+          font-size: 12px;
+          font-weight: 500;
+          color: #646566;
+        }
+      }
+    }
+  }
 
-.action-section {
-  padding: 12px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgb(0 0 0 / 10%);
-}
+  .action-section {
+    padding: 12px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 10%);
 
-.main-actions {
-  display: flex;
-  flex-wrap: wrap;
+    .main-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
 
-  /* flex-direction: column; */
-  gap: 12px;
-}
+      .action-btn {
+        flex: 0 0 calc(50% - 6px);
 
-.action-btn {
-  flex: 0 0 calc(50% - 6px);
-
-  /* height: 44px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px; */
-}
-
-.action-btn .van-icon {
-  margin-right: 8px;
+        .van-icon {
+          margin-right: 8px;
+        }
+      }
+    }
+  }
 }
 </style>
