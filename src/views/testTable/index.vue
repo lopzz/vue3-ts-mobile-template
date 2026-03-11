@@ -9,6 +9,7 @@ import type {
   GridOptions,
   SelectionChangedEvent,
 } from '@/components/Table/typings';
+import Pagination from '@/components/Pagination/index.vue';
 
 defineOptions({
   name: 'Home',
@@ -187,6 +188,21 @@ const changeRowData = () => {
   };
   rowData.value.push(data);
 };
+
+const page = ref({
+  pageSize: 100,
+  currentPage: 1,
+  total: 1001,
+});
+const pageChange = ({
+  pageSize,
+  currentPage,
+}: {
+  pageSize: number;
+  currentPage: number;
+}) => {
+  console.warn(pageSize, currentPage);
+};
 </script>
 
 <template>
@@ -198,6 +214,13 @@ const changeRowData = () => {
       :column-defs="columnDefs"
       :grid-options="gridOptions"
       @selection-changed="selectionChanged"
+    />
+    <Pagination
+      :total="page.total"
+      v-model:page-size="page.pageSize"
+      v-model:current-page="page.currentPage"
+      @page-change="pageChange"
+      :page-sizes="[20, 50, 60, 100, 200]"
     />
   </div>
 </template>
